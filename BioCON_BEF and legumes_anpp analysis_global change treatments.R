@@ -86,6 +86,62 @@ print(CO2Nplot, vp=viewport(layout.pos.row=1, layout.pos.col=3))
 
 
 
+#mixed model with hedges d
+hedgesdModelSpp <- lm(hedges_d ~ year*trt*species , data=anppHedgesDSpp)
+summary(hedgesdModelSpp)
+anova(hedgesdModelSpp)
+
+amcaplotSpp <- ggplot(subset(anppHedgesDSpp, species=='Amorpha.canescens'), aes(x=year, y=hedges_d, shape=trt, colour=trt)) +
+  geom_point(size=4) +
+  geom_smooth(method=lm, size=1, se=F) +
+  #   geom_errorbar(aes(ymin=hedges_d-hedges_d_ci, ymax=hedges_d+hedges_d_ci, width=0.2)) +
+  ylab('Hedges d') +
+  theme(legend.position=c(0.8,0.85), axis.title.x=element_blank(), axis.text.x=element_text(angle=45)) +
+  coord_cartesian(ylim=c(-15,20), xlim=c(1997.5,2005.5)) +
+  scale_x_continuous(breaks=seq(1998,2005,1)) +
+  scale_y_continuous(breaks=seq(-15,20,5)) +
+  scale_colour_discrete(labels=c('eCO2', 'eN', 'eCO2 + eN')) +
+  scale_shape_discrete(labels=c('eCO2', 'eN', 'eCO2 + eN')) +
+  annotate('text', x=1997.75, y=18, label='(a) A. canescens', size=7, hjust=0)
+lecaplotSpp <- ggplot(subset(anppHedgesDSpp, species=='Lespedeza.capitata'), aes(x=year, y=hedges_d, shape=trt, colour=trt)) +
+  geom_point(size=4) +
+  geom_smooth(method=lm, size=1, se=F) +
+  #   geom_errorbar(aes(ymin=hedges_d-hedges_d_ci, ymax=hedges_d+hedges_d_ci, width=0.2)) +
+  ylab('Hedges d') +
+  theme(legend.position='none', axis.title.x=element_blank(), axis.text.x=element_text(angle=45)) +
+  coord_cartesian(ylim=c(-15,20), xlim=c(1997.5,2005.5)) +
+  scale_x_continuous(breaks=seq(1998,2005,1)) +
+  scale_y_continuous(breaks=seq(-15,20,5)) +
+  annotate('text', x=1997.75, y=18, label='(b) Le. capitata', size=7, hjust=0)
+lupeplotSpp <- ggplot(subset(anppHedgesDSpp, species=='Lupinus.perennis'), aes(x=year, y=hedges_d, shape=trt, colour=trt)) +
+  geom_point(size=4) +
+  geom_smooth(method=lm, size=1, se=F) +
+  #   geom_errorbar(aes(ymin=hedges_d-hedges_d_ci, ymax=hedges_d+hedges_d_ci, width=0.2)) +
+  ylab('Hedges d') +
+  theme(legend.position='none', axis.title.x=element_blank(), axis.text.x=element_text(angle=45)) +
+  coord_cartesian(ylim=c(-15,20), xlim=c(1997.5,2005.5)) +
+  scale_x_continuous(breaks=seq(1998,2005,1)) +
+  scale_y_continuous(breaks=seq(-15,20,5)) +
+  annotate('text', x=1997.75, y=18, label='(c) Lu. perennis', size=7, hjust=0)
+peviplotSpp <- ggplot(subset(anppHedgesDSpp, species=='Petalostemum.villosum' & year<2005), aes(x=year, y=hedges_d, shape=trt, colour=trt)) +
+  geom_point(size=4) +
+  geom_smooth(method=lm, size=1, se=F) +
+  #   geom_errorbar(aes(ymin=hedges_d-hedges_d_ci, ymax=hedges_d+hedges_d_ci, width=0.2)) +
+  ylab('Hedges d') +
+  theme(legend.position='none', axis.title.x=element_blank(), axis.text.x=element_text(angle=45)) +
+  coord_cartesian(ylim=c(-15,20), xlim=c(1997.5,2005.5)) +
+  scale_x_continuous(breaks=seq(1998,2005,1)) +
+  scale_y_continuous(breaks=seq(-15,20,5)) +
+  annotate('text', x=1997.75, y=18, label='(d) P. villosum', size=7, hjust=0)
+
+#put hedges d panels together
+pushViewport(viewport(layout=grid.layout(2,2))) 
+print(amcaplotSpp, vp=viewport(layout.pos.row=1, layout.pos.col=1))
+print(lecaplotSpp, vp=viewport(layout.pos.row=1, layout.pos.col=2))
+print(lupeplotSpp, vp=viewport(layout.pos.row=2, layout.pos.col=1))
+print(peviplotSpp, vp=viewport(layout.pos.row=2, layout.pos.col=2))
+
+
 
 
 
