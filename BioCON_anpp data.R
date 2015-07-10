@@ -98,9 +98,13 @@ anppTrue16 <- melt(anppNoTrt, id.vars=c('plot', 'ring', 'year', 'month'), variab
 #merge again with trt data
 anppTrue16Trt <- merge(anppTrue16, trt)
 
-
-
-
+#fixing problem with "unsorted" and "green" biomass in monocultures not being labeled as the monospecies; Peter okayed this assumption Apr 28 2015
+anppTrue16Trt$species <- as.character(anppTrue16Trt$species)
+anppTrue16Trt$monospecies <- as.character(anppTrue16Trt$monospecies)
+anppTrue16TrtNonzero <- subset(anppTrue16Trt, subset=(anpp>0))
+anppTrue16TrtNonzero$fix <- ifelse(anppTrue16TrtNonzero$species=='Unsorted.Biomass', 1, 0)
+anppTrue16TrtNonzero$fix2 <- anppTrue16TrtNonzero$spp_count+anppTrue16TrtNonzero$fix
+anppTrue16TrtNonzero$species <- as.factor(with(anppTrue16TrtNonzero, ifelse(fix2==2, monospecies, species)))
 
 
 
