@@ -106,6 +106,8 @@ anppTrue16TrtNonzero$fix <- ifelse(anppTrue16TrtNonzero$species=='Unsorted.Bioma
 anppTrue16TrtNonzero$fix2 <- anppTrue16TrtNonzero$spp_count+anppTrue16TrtNonzero$fix
 anppTrue16TrtNonzero$species <- as.factor(with(anppTrue16TrtNonzero, ifelse(fix2==2, monospecies, species)))
 
+#take max of spring and fall biomass values for each species in each plot and year
+anppMax <- ddply(anppTrue16TrtNonzero, c('year', 'plot', 'ring', 'CO2_trt', 'N_trt', 'spp_count', 'group_count', 'experiment', 'monospecies', 'monogroup', 'species', 'Achillea.millefolium', 'Agropyron.repens', 'Amorpha.canescens', 'Andropogon.gerardi', 'Anemone.cylindrica', 'Asclepias.tuberosa', 'Bouteloua.gracilis', 'Bromus.inermis', 'Koeleria.cristata', 'Lespedeza.capitata', 'Lupinus.perennis', 'Petalostemum.villosum', 'Poa.pratensis', 'Schizachyrium.scoparium', 'Solidago.rigida', 'Sorghastrum.nutans', 'C.3', 'C.4', 'Forb', 'Legume', 'legume_num', 'legume_spp', 'trt', 'spp_trt'), summarise, anpp=max(anpp))
 
 
 
