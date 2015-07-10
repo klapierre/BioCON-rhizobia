@@ -204,9 +204,9 @@ anppPolyRY$spp_type <- with(anppPolyRY, ifelse(species=='Amorpha.canescens', 'le
                                                       ifelse(species=='Lupinus.perennis', 'legume',
                                                              ifelse(species=='Petalostemum.villosum', 'legume', 'non-legume')))))
 
-anppPolyRY$other_legs <- with(anppPolyRY, as.factor(ifelse(leg_num_spp=='none', 'none',
-                                                           ifelse(leg_num_spp=='mix', 'mix',
-                                                                  ifelse(leg_num_spp=='all 4', 'all legumes', 'single legume')))))
+anppPolyRY$other_legs <- with(anppPolyRY, as.factor(ifelse(leg_num_spp=='0 legumes', '0 legumes',
+                                                           ifelse(leg_num_spp=='2 legumes', '2 legumes',
+                                                                  ifelse(leg_num_spp=='4 legumes', '4 legumes', 'single legume')))))
 
 ##############################################
 ##############################################
