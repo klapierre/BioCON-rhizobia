@@ -18,6 +18,15 @@ setwd('C:\\Users\\Kim\\Desktop\\BioCON rhizobia\\BioCON data')
 #merge ANPP and climate data
 anppClimate <- merge(anppRY, climate)
 
+
+##############################################
+##############################################
+
+#Diversity analyses only (i.e., control plots, no N or CO2 additions)
+
+##############################################
+##############################################
+
 #mixed model
 #IMPORTANT: 4 spp polycultures
 #IMPORTANT: using growing year climate variables
@@ -35,3 +44,18 @@ ggplot(subset(anppClimate, spp_count==4 & trt=='Camb_Namb'), aes(x=gy_precip_cm,
   xlab('Total Annual Precipitation (cm)')
 
 
+#ANOVA model
+#IMPORTANT: 4 spp polycultures
+legsppnumANOVA <- aov(logRYT ~ leg_num_spp, data=subset(anppClimate, spp_count==4 & trt=='Camb_Namb'))
+summary(legsppnumANOVA)
+lsmeans(legsppnumANOVA, cld~leg_num_spp)
+
+ggplot(barGraphStats(data=subset(anppClimate, spp_count==4 & trt=='Camb_Namb'), variable='logRYT', byFactorNames=c('order')), aes(x=order, y=mean)) +
+  geom_bar(stat='identity', fill='white', colour='black') +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se, width=0.2)) +
+  ylab('log Relative Yield Total') +
+  theme(axis.title.x=element_blank()) +
+  annotate('text', x=c(1,2,5,8), y=c(0.14,0.14,0.08,0.17), label='a', size=8) +
+  annotate('text', x=c(3,4,6), y=c(0.33,0.36,0.39), label='b', size=8) +
+  annotate('text', x=7, y=0.3, label='ab', size=8) +
+  coord_cartesian(ylim=c(0,0.45))
