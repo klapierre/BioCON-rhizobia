@@ -59,3 +59,20 @@ ggplot(barGraphStats(data=subset(anppClimate, spp_count==4 & trt=='Camb_Namb'), 
   annotate('text', x=c(3,4,6), y=c(0.33,0.36,0.39), label='b', size=8) +
   annotate('text', x=7, y=0.3, label='ab', size=8) +
   coord_cartesian(ylim=c(0,0.45))
+
+
+#mixed model
+#IMPORTANT: 4 spp polycultures, only included plots with one of the four legumes (intra-functional group differences)
+RYTmixedCategoricalLegs <- lme(logRYT ~ gy_precip_cm*leg_num_spp, random=~1|plot, data=subset(anppClimate, spp_count==4 & trt=='Camb_Namb' & leg_num_spp!='mix' & leg_num_spp!='none' & leg_num_spp!='all 4'))
+summary(RYTmixedCategoricalLegs)
+anova(RYTmixedCategoricalLegs)
+lsmeans(RYTmixedCategoricalLegs, cld~leg_num_spp)
+
+color <- c("#E69F00", "#009E73", "#0072B2", "#CC79A7")
+
+ggplot(subset(anppClimate, spp_count==4 & trt=='Camb_Namb' & legume_num==1), aes(x=gy_precip_cm, y=logRYT, colour=order)) +
+  geom_point(size=2) +
+  geom_smooth(method=lm, size=1) +
+  ylab('log Relative Yield Total') +
+  xlab('Total Annual Precipitation (cm)') +
+  scale_colour_manual(values=color)
