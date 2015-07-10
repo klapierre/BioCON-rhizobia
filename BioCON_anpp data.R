@@ -168,3 +168,6 @@ anppRY$exp_yield <- with(anppRY, ifelse(spp_count==4, (ACMImono2+AGREmono2+AMCAm
 
 #calculate relative yield total
 anppRY$RYT <- with(anppRY, total_biomass/exp_yield)
+
+#clean up workspace
+rm(list=c('anpp', 'anpp16', 'anppAll', 'anppInitial', 'anppInitialYear', 'anppLast', 'anppLastLong', 'anppLastLongComplete', 'anppMax', 'anppMono', 'anppMonoAvg', 'anppMonoAvgWide', 'anppNoTrt', 'anppPoly', 'anppSum', 'anppTrt', 'anppTrue16', 'anppTrue16Trt', 'anppTrue16TrtNonzero', 'trt'))
