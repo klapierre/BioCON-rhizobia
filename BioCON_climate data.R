@@ -51,3 +51,6 @@ qqnorm(climateGrowingYear$gy_precip_cm)
 #merge all climate data together
 climateInitial <- merge(climateAnnual, climateGrowingSeason)
 climate <- merge(climateInitial, climateGrowingYear)
+
+#cleanup
+rm(list=c('climateAnnual', 'climateDailyGrowingSeason', 'climateGrowingSeason', 'climateGrowingYear', 'climateInitial'))
