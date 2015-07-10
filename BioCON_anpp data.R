@@ -58,24 +58,27 @@ names(anpp)[names(anpp)=="Unsorted.Biomass"] <- "Unsort"
 #merge anpp and trt data
 anppTrt <- merge(anpp, trt, all=T)
 
+#remove temp and water manipulation data, bareground plots
+anppSub <- subset(anppTrt, subset=(temp_trt!='HTamb' & temp_trt!='HTelv' & water_trt!='H2Oamb' & water_trt!='H2Oneg' & spp_count!=0))
+
 #get rid of 16 spp weeds in plots where they are labeled as spp
-anppTrt$ACMI1 <- with(anppTrt, ifelse(Achillea.millefolium==1, ACMI, 0))
-anppTrt$AGRE1 <- with(anppTrt, ifelse(Agropyron.repens==1, AGRE, 0))
-anppTrt$AMCA1 <- with(anppTrt, ifelse(Amorpha.canescens==1, AMCA, 0))
-anppTrt$ANGE1 <- with(anppTrt, ifelse(Andropogon.gerardi==1, ANGE, 0))
-anppTrt$ANCY1 <- with(anppTrt, ifelse(Anemone.cylindrica==1, ANCY, 0))
-anppTrt$ASTU1 <- with(anppTrt, ifelse(Asclepias.tuberosa==1, ASTU, 0))
-anppTrt$BOGR1 <- with(anppTrt, ifelse(Bouteloua.gracilis==1, BOGR, 0))
-anppTrt$BRIN1 <- with(anppTrt, ifelse(Bromus.inermis==1, BRIN, 0))
-anppTrt$KOCR1 <- with(anppTrt, ifelse(Koeleria.cristata==1, KOCR, 0))
-anppTrt$LECA1 <- with(anppTrt, ifelse(Lespedeza.capitata==1, LECA, 0))
-anppTrt$LUPE1 <- with(anppTrt, ifelse(Lupinus.perennis==1, LUPE, 0))
-anppTrt$PEVI1 <- with(anppTrt, ifelse(Petalostemum.villosum==1, PEVI, 0))
-anppTrt$POPR1 <- with(anppTrt, ifelse(Poa.pratensis==1, POPR, 0))
-anppTrt$SCSC1 <- with(anppTrt, ifelse(Schizachyrium.scoparium==1, SCSC, 0))
-anppTrt$SORI1 <- with(anppTrt, ifelse(Solidago.rigida==1, SORI, 0))
-anppTrt$SONU1 <- with(anppTrt, ifelse(Sorghastrum.nutans==1, SONU, 0))
-anppNoTrt <- subset(anppTrt, select=-c(Achillea.millefolium, Agropyron.repens, Amorpha.canescens, Andropogon.gerardi, Anemone.cylindrica, Asclepias.tuberosa, Bouteloua.gracilis, Bromus.inermis, Koeleria.cristata, Lespedeza.capitata, Lupinus.perennis, Petalostemum.villosum, Poa.pratensis, Schizachyrium.scoparium, Solidago.rigida, Sorghastrum.nutans, CO2_trt, N_trt, spp_count, group_count, experiment, monospecies, monogroup, sampling_num, water_trt, temp_trt, C.3, C.4, Forb, Legume, legume_spp, legume_num, leg_num_spp, trt, spp_trt, ACMI, ASTU, KOCR, LUPE, POPR, SONU, AGRE, ANGE, BRIN, PEVI, AMCA, BOGR, SCSC, SORI, ANCY, LECA))
+anppSub$ACMI1 <- with(anppSub, ifelse(Achillea.millefolium==1, ACMI, 0))
+anppSub$AGRE1 <- with(anppSub, ifelse(Agropyron.repens==1, AGRE, 0))
+anppSub$AMCA1 <- with(anppSub, ifelse(Amorpha.canescens==1, AMCA, 0))
+anppSub$ANGE1 <- with(anppSub, ifelse(Andropogon.gerardi==1, ANGE, 0))
+anppSub$ANCY1 <- with(anppSub, ifelse(Anemone.cylindrica==1, ANCY, 0))
+anppSub$ASTU1 <- with(anppSub, ifelse(Asclepias.tuberosa==1, ASTU, 0))
+anppSub$BOGR1 <- with(anppSub, ifelse(Bouteloua.gracilis==1, BOGR, 0))
+anppSub$BRIN1 <- with(anppSub, ifelse(Bromus.inermis==1, BRIN, 0))
+anppSub$KOCR1 <- with(anppSub, ifelse(Koeleria.cristata==1, KOCR, 0))
+anppSub$LECA1 <- with(anppSub, ifelse(Lespedeza.capitata==1, LECA, 0))
+anppSub$LUPE1 <- with(anppSub, ifelse(Lupinus.perennis==1, LUPE, 0))
+anppSub$PEVI1 <- with(anppSub, ifelse(Petalostemum.villosum==1, PEVI, 0))
+anppSub$POPR1 <- with(anppSub, ifelse(Poa.pratensis==1, POPR, 0))
+anppSub$SCSC1 <- with(anppSub, ifelse(Schizachyrium.scoparium==1, SCSC, 0))
+anppSub$SORI1 <- with(anppSub, ifelse(Solidago.rigida==1, SORI, 0))
+anppSub$SONU1 <- with(anppSub, ifelse(Sorghastrum.nutans==1, SONU, 0))
+anppNoTrt <- subset(anppSub, select=-c(Achillea.millefolium, Agropyron.repens, Amorpha.canescens, Andropogon.gerardi, Anemone.cylindrica, Asclepias.tuberosa, Bouteloua.gracilis, Bromus.inermis, Koeleria.cristata, Lespedeza.capitata, Lupinus.perennis, Petalostemum.villosum, Poa.pratensis, Schizachyrium.scoparium, Solidago.rigida, Sorghastrum.nutans, CO2_trt, N_trt, spp_count, group_count, experiment, monospecies, monogroup, sampling_num, water_trt, temp_trt, C.3, C.4, Forb, Legume, legume_spp, legume_num, leg_num_spp, trt, spp_trt, ACMI, ASTU, KOCR, LUPE, POPR, SONU, AGRE, ANGE, BRIN, PEVI, AMCA, BOGR, SCSC, SORI, ANCY, LECA))
 names(anppNoTrt)[names(anppNoTrt)=="ACMI1"] <- "Achillea.millefolium"
 names(anppNoTrt)[names(anppNoTrt)=="ASTU1"] <- "Asclepias.tuberosa"
 names(anppNoTrt)[names(anppNoTrt)=="KOCR1"] <- "Koeleria.cristata"
@@ -168,6 +171,25 @@ anppRY$exp_yield <- with(anppRY, ifelse(spp_count==4, (ACMImono2+AGREmono2+AMCAm
 
 #calculate relative yield total
 anppRY$RYT <- with(anppRY, total_biomass/exp_yield)
+
+##############################################
+##############################################
+
+#check RYT for normality within plots
+shapiro.test(anppRY$RYT)
+qqnorm(anppRY$RYT)
+
+#make normal
+anppRY$logRYT <- log10(anppRY$RYT)
+shapiro.test(anppRY$logRYT)
+qqnorm(anppRY$logRYT)
+
+# anppRY$sqrtRYT <- sqrt(anppRY$RYT)
+# shapiro.test(anppRY$sqrtRYT)
+# qqnorm(anppRY$sqrtRYT)
+
+##############################################
+##############################################
 
 #clean up workspace
 rm(list=c('anpp', 'anpp16', 'anppAll', 'anppInitial', 'anppInitialYear', 'anppLast', 'anppLastLong', 'anppLastLongComplete', 'anppMax', 'anppMono', 'anppMonoAvg', 'anppMonoAvgWide', 'anppNoTrt', 'anppPoly', 'anppSum', 'anppTrt', 'anppTrue16', 'anppTrue16Trt', 'anppTrue16TrtNonzero', 'trt'))
