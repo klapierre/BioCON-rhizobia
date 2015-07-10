@@ -214,6 +214,18 @@ qqnorm(anppPolyRY$logRY)
 ##############################################
 ##############################################
 
+#scale up RY to spp_num*RY
+anppPolyRY$RYscaled <- with(anppPolyRY, spp_count*RY)
+anppPolyRY$RYscaled_log <- log10(anppPolyRY$RYscaled)
+
+#normality for anpp
+qqnorm(anppPolyRY$anpp)
+anppPolyRY$log_anpp <- log10(anppPolyRY$anpp)
+qqnorm(anppPolyRY$log_anpp)
+
+##############################################
+##############################################
+
 #difference between 1 and 4 legume plots
 legume4 <- subset(anppPolyRY, spp_count==4 & other_legs=='4 legumes')
 legume4mean <- with(legume4, aggregate(RY, list(species=species, year=year, CO2_trt=CO2_trt, N_trt=N_trt, trt=trt), mean))
