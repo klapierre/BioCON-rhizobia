@@ -47,3 +47,7 @@ qqnorm(climateGrowingSeason$gs_precip_cm)
 
 shapiro.test(climateGrowingYear$gy_precip_cm)
 qqnorm(climateGrowingYear$gy_precip_cm)
+
+#merge all climate data together
+climateInitial <- merge(climateAnnual, climateGrowingSeason)
+climate <- merge(climateInitial, climateGrowingYear)
