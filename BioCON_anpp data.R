@@ -19,3 +19,36 @@ anppLastLongComplete <- anppLastLong[complete.cases(anppLastLong[,16]),]
 #append 2013-2014 data to the initial dataset
 anppAll <- rbind(anppInitialYear, anppLastLongComplete)
 
+#rename Green.Biomass as Unsorted.Biomass (inconsistantly named across years and seasons, but never both used at once)
+anppAll$species <- as.character(anppAll$species)
+anppAll$species2 <- as.character(ifelse(anppAll$species=='Green.Biomass', 'Unsorted.Biomass', anppAll$species))
+
+#anpp for the 16 BioCON species only (i.e., removing weeds, litter, etc.)
+anpp16 <- anppAll[(anppAll$species %in% c("Achillea.millefolium","Asclepias.tuberosa",
+                                          "Koeleria.cristata","Lupinus.perennis","Poa.pratensis",
+                                          "Sorghastrum.nutans","Agropyron.repens","Andropogon.gerardi",
+                                          "Bromus.inermis","Petalostemum.villosum","Amorpha.canescens",
+                                          "Bouteloua.gracilis","Schizachyrium.scoparium", "Solidago.rigida",
+                                          "Anemone.cylindrica", "Lespedeza.capitata", "Unsorted.Biomass",
+                                          "Green.Biomass")),]
+
+#get species anpp as columns
+anpp <- dcast(anpp16, sampling_num + year + month + plot + ring + CO2_trt + N_trt + spp_count + group_count + experiment + monospecies + monogroup + water_trt + temp_trt ~ species2, value.var='anpp')
+anpp[is.na(anpp)] <- 0
+names(anpp)[names(anpp)=="Achillea.millefolium"] <- "ACMI"
+names(anpp)[names(anpp)=="Asclepias.tuberosa"] <- "ASTU"
+names(anpp)[names(anpp)=="Koeleria.cristata"] <- "KOCR"
+names(anpp)[names(anpp)=="Lupinus.perennis"] <- "LUPE"
+names(anpp)[names(anpp)=="Poa.pratensis"] <- "POPR"
+names(anpp)[names(anpp)=="Sorghastrum.nutans"] <- "SONU"
+names(anpp)[names(anpp)=="Agropyron.repens"] <- "AGRE"
+names(anpp)[names(anpp)=="Andropogon.gerardi"] <- "ANGE"
+names(anpp)[names(anpp)=="Bromus.inermis"] <- "BRIN"
+names(anpp)[names(anpp)=="Petalostemum.villosum"] <- "PEVI"
+names(anpp)[names(anpp)=="Amorpha.canescens"] <- "AMCA"
+names(anpp)[names(anpp)=="Bouteloua.gracilis"] <- "BOGR"
+names(anpp)[names(anpp)=="Schizachyrium.scoparium"] <- "SCSC"
+names(anpp)[names(anpp)=="Solidago.rigida"] <- "SORI"
+names(anpp)[names(anpp)=="Anemone.cylindrica"] <- "ANCY"
+names(anpp)[names(anpp)=="Lespedeza.capitata"] <- "LECA"
+names(anpp)[names(anpp)=="Unsorted.Biomass"] <- "Unsort"
