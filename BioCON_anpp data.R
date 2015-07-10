@@ -191,5 +191,34 @@ qqnorm(anppRY$logRYT)
 ##############################################
 ##############################################
 
+#RY of legumes in monoculture vs polyculture, with and without other legumes
+anppPolyRY <- merge(anppPoly, anppMonoAvg, all=T)
+anppPolyRY$RY <- with(anppPolyRY, ifelse(spp_count==4, (anpp/(mono_anpp/4)),
+                                         ifelse(spp_count==9, (anpp/(mono_anpp/9)), (anpp/(mono_anpp/16)))))
+
+anppPolyRY <- anppPolyRY[complete.cases(anppPolyRY),]
+
+#make column identifying if a species is a legume or non-legume
+anppPolyRY$spp_type <- with(anppPolyRY, ifelse(species=='Amorpha.canescens', 'legume',
+                                               ifelse(species=='Lespedeza.capitata', 'legume',
+                                                      ifelse(species=='Lupinus.perennis', 'legume',
+                                                             ifelse(species=='Petalostemum.villosum', 'legume', 'non-legume')))))
+
+anppPolyRY$other_legs <- with(anppPolyRY, as.factor(ifelse(leg_num_spp=='none', 'none',
+                                                           ifelse(leg_num_spp=='mix', 'mix',
+                                                                  ifelse(leg_num_spp=='all 4', 'all legumes', 'single legume')))))
+
+##############################################
+##############################################
+
+#normalize data
+
+qqnorm(anppPolyRY$RY)
+anppPolyRY$logRY <- log10(anppPolyRY$RY)
+qqnorm(anppPolyRY$logRY)
+
+##############################################
+##############################################
+
 #clean up workspace
-rm(list=c('anpp', 'anpp16', 'anppAll', 'anppInitial', 'anppInitialYear', 'anppLast', 'anppLastLong', 'anppLastLongComplete', 'anppMax', 'anppMono', 'anppMonoAvgWide', 'anppNoTrt', 'anppSum', 'anppTrt', 'anppTrue16', 'anppTrue16Trt', 'anppTrue16TrtNonzero', 'trt', 'anppSub'))
+rm(list=c('anpp', 'anpp16', 'anppAll', 'anppInitial', 'anppInitialYear', 'anppLast', 'anppLastLong', 'anppLastLongComplete', 'anppMax', 'anppMono', 'anppMonoAvgWide', 'anppMonoAvg', 'anppPoly',  'anppNoTrt', 'anppSum', 'anppTrt', 'anppTrue16', 'anppTrue16Trt', 'anppTrue16TrtNonzero', 'trt', 'anppSub'))
