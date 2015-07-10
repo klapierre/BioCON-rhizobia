@@ -283,6 +283,48 @@ anppRR$hedgesd_ci_CO2_N <- 1.96*anppRR$hedgesd_var_CO2_N
 ##############################################
 ##############################################
 
+#get anpp hedges d by legume spp
+anppTrtMeansSpp <- ddply(subset(anppPolyRY, spp_count==4 & spp_type=='legume'), c('year', 'species', 'trt'), summarise,
+                         anpp_mean=mean(anpp),
+                         anpp_sd=sd(anpp),
+                         anpp_n=length(anpp))
+
+anppRRmeanSpp <- dcast(anppTrtMeansSpp, year + species ~ trt, value.var='anpp_mean')
+anppRRsdSpp <- dcast(anppTrtMeansSpp, year + species ~ trt, value.var='anpp_sd')
+names(anppRRsdSpp)[names(anppRRsdSpp)=='Camb_Namb'] <- 'ctl_sd'
+names(anppRRsdSpp)[names(anppRRsdSpp)=='Camb_Nenrich'] <- 'N_sd'
+names(anppRRsdSpp)[names(anppRRsdSpp)=='Cenrich_Namb'] <- 'CO2_sd'
+names(anppRRsdSpp)[names(anppRRsdSpp)=='Cenrich_Nenrich'] <- 'CO2_N_sd'
+anppRRnSpp <- dcast(anppTrtMeansSpp, year + species ~ trt, value.var='anpp_n')
+names(anppRRnSpp)[names(anppRRnSpp)=='Camb_Namb'] <- 'ctl_n'
+names(anppRRnSpp)[names(anppRRnSpp)=='Camb_Nenrich'] <- 'N_n'
+names(anppRRnSpp)[names(anppRRnSpp)=='Cenrich_Namb'] <- 'CO2_n'
+names(anppRRnSpp)[names(anppRRnSpp)=='Cenrich_Nenrich'] <- 'CO2_N_n'
+anppRRmeansdSpp <- merge(anppRRmeanSpp, anppRRsdSpp)
+anppRRSpp <- merge(anppRRmeansdSpp, anppRRnSpp)
+anppRRSpp$hedgesd_CO2 <- with(anppRRSpp, ((Cenrich_Namb-Camb_Namb)/sqrt((CO2_sd*(CO2_n-1)+ctl_sd*(ctl_n-1))/(CO2_n+ctl_n-2)))*(1-(3/(4*(CO2_n+ctl_n-2)-1))))
+anppRRSpp$hedgesd_N <- with(anppRRSpp, ((Camb_Nenrich-Camb_Namb)/sqrt((N_sd*(N_n-1)+ctl_sd*(ctl_n-1))/(N_n+ctl_n-2)))*(1-(3/(4*(N_n+ctl_n-2)-1))))
+anppRRSpp$hedgesd_CO2_N <- with(anppRRSpp, ((Cenrich_Nenrich-Camb_Namb)/sqrt((CO2_N_sd*(CO2_N_n-1)+ctl_sd*(ctl_n-1))/(CO2_N_n+ctl_n-2)))*(1-(3/(4*(CO2_N_n+ctl_n-2)-1))))
+anppRRSpp$hedgesd_var_CO2 <- with(anppRRSpp, ((CO2_n+ctl_n)/(CO2_n*ctl_n))+((hedgesd_CO2^2)/(2*(CO2_n+ctl_n))))
+anppRRSpp$hedgesd_var_N <- with(anppRRSpp, ((N_n+ctl_n)/(N_n*ctl_n))+((hedgesd_N^2)/(2*(N_n+ctl_n))))
+anppRRSpp$hedgesd_var_CO2_N <- with(anppRRSpp, ((CO2_N_n+ctl_n)/(CO2_N_n*ctl_n))+((hedgesd_CO2_N^2)/(2*(CO2_N_n+ctl_n))))
+anppRRSpp$hedgesd_ci_CO2 <- 1.96*anppRRSpp$hedgesd_var_CO2
+anppRRSpp$hedgesd_ci_N <- 1.96*anppRRSpp$hedgesd_var_N
+anppRRSpp$hedgesd_ci_CO2_N <- 1.96*anppRRSpp$hedgesd_var_CO2_N
+
+anppHedgesDaSpp <- anppRRSpp[,-c(3:14,18:23)]
+anppHedgesDSppd <- melt(anppHedgesDaSpp, id.vars=c('year', 'species'), variable.name='trt', value.name='hedges_d')
+anppHedgesDbSpp <- anppRRSpp[,-c(3:20)]
+anppHedgesDSppci <- melt(anppHedgesDbSpp, id.vars=c('year', 'species'), variable.name='trt', value.name='hedges_d_ci')
+anppHedgesDSppci$trt2 <- with(anppHedgesDSppci, ifelse(trt=='hedgesd_ci_CO2', 'hedgesd_CO2',
+                                                       ifelse(trt=='hedgesd_ci_N', 'hedgesd_N', 'hedgesd_CO2_N')))
+anppHedgesDSppci$trt <- NULL
+names(anppHedgesDSppci)[names(anppHedgesDSppci)=='trt2'] <- 'trt'
+anppHedgesDSpp <- merge(anppHedgesDSppd, anppHedgesDSppci)
+
+
+##############################################
+##############################################
 
 #clean up workspace
-rm(list=c('anpp', 'anpp16', 'anppAll', 'anppInitial', 'anppInitialYear', 'anppLast', 'anppLastLong', 'anppLastLongComplete', 'anppMax', 'anppMono', 'anppMonoAvgWide', 'anppMonoAvg', 'anppPoly',  'anppNoTrt', 'anppSum', 'anppTrt', 'anppTrue16', 'anppTrue16Trt', 'anppTrue16TrtNonzero', 'trt', 'anppSub', 'legume1', 'legume1mean', 'legume4', 'legume4mean', 'legume4to1', 'anppTrtMeans', 'anppRRmean', 'anppRRmeansd', 'anppRRn', 'anppRRsd'))
+rm(list=c('anpp', 'anpp16', 'anppAll', 'anppInitial', 'anppInitialYear', 'anppLast', 'anppLastLong', 'anppLastLongComplete', 'anppMax', 'anppMono', 'anppMonoAvgWide', 'anppMonoAvg', 'anppPoly',  'anppNoTrt', 'anppSum', 'anppTrt', 'anppTrue16', 'anppTrue16Trt', 'anppTrue16TrtNonzero', 'trt', 'anppSub', 'legume1', 'legume1mean', 'legume4', 'legume4mean', 'legume4to1', 'anppTrtMeans', 'anppRRmean', 'anppRRmeansd', 'anppRRn', 'anppRRsd', 'anppHedgesDaSpp', 'anppHedgesDbSpp', 'anppHedgesDSppci', 'anppHedgesDSppd', 'anppRRmeansdSpp', 'anppRRmeanSpp', 'anppRRnSpp', 'anppRRSpp', 'anppTrtMeansSpp'))
