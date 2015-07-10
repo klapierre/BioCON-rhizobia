@@ -109,18 +109,62 @@ anppTrue16TrtNonzero$species <- as.factor(with(anppTrue16TrtNonzero, ifelse(fix2
 #take max of spring and fall biomass values for each species in each plot and year
 anppMax <- ddply(anppTrue16TrtNonzero, c('year', 'plot', 'ring', 'CO2_trt', 'N_trt', 'spp_count', 'group_count', 'experiment', 'monospecies', 'monogroup', 'species', 'Achillea.millefolium', 'Agropyron.repens', 'Amorpha.canescens', 'Andropogon.gerardi', 'Anemone.cylindrica', 'Asclepias.tuberosa', 'Bouteloua.gracilis', 'Bromus.inermis', 'Koeleria.cristata', 'Lespedeza.capitata', 'Lupinus.perennis', 'Petalostemum.villosum', 'Poa.pratensis', 'Schizachyrium.scoparium', 'Solidago.rigida', 'Sorghastrum.nutans', 'C.3', 'C.4', 'Forb', 'Legume', 'legume_num', 'legume_spp', 'trt', 'spp_trt'), summarise, anpp=max(anpp))
 
+#subset out monocultures
+anppMono <- subset(anppMax, subset=(spp_count==1 & anpp!=0))
+#subset out polycultures
+anppPoly <- subset(anppMax, subset=(spp_count!=1 & anpp!=0))
 
+#calculate average biomass of each species in monoculture by year, CO2 and N trt
+anppMonoAvg <- aggregate(anppMono$anpp, by=list(year=anppMono$year, CO2_trt=anppMono$CO2_trt, N_trt=anppMono$N_trt, species=anppMono$species, trt=anppMono$trt), FUN=mean)
+names(anppMonoAvg)[names(anppMonoAvg)=="x"] <- "mono_anpp"
 
+#make species biomass as columns
+anppMonoAvgWide <- dcast(anppMonoAvg, year + CO2_trt + N_trt + trt ~ species, value.var='mono_anpp')
 
+names(anppMonoAvgWide)[names(anppMonoAvgWide)=="Achillea.millefolium"] <- "ACMImono"
+names(anppMonoAvgWide)[names(anppMonoAvgWide)=="Agropyron.repens"] <- "AGREmono"
+names(anppMonoAvgWide)[names(anppMonoAvgWide)=="Amorpha.canescens"] <- "AMCAmono"
+names(anppMonoAvgWide)[names(anppMonoAvgWide)=="Andropogon.gerardi"] <- "ANGEmono"
+names(anppMonoAvgWide)[names(anppMonoAvgWide)=="Anemone.cylindrica"] <- "ANCYmono"
+names(anppMonoAvgWide)[names(anppMonoAvgWide)=="Asclepias.tuberosa"] <- "ASTUmono"
+names(anppMonoAvgWide)[names(anppMonoAvgWide)=="Bouteloua.gracilis"] <- "BOGRmono"
+names(anppMonoAvgWide)[names(anppMonoAvgWide)=="Bromus.inermis"] <- "BRINmono"
+names(anppMonoAvgWide)[names(anppMonoAvgWide)=="Koeleria.cristata"] <- "KOCRmono"
+names(anppMonoAvgWide)[names(anppMonoAvgWide)=="Lespedeza.capitata"] <- "LECAmono"
+names(anppMonoAvgWide)[names(anppMonoAvgWide)=="Lupinus.perennis"] <- "LUPEmono"
+names(anppMonoAvgWide)[names(anppMonoAvgWide)=="Petalostemum.villosum"] <- "PEVImono"
+names(anppMonoAvgWide)[names(anppMonoAvgWide)=="Poa.pratensis"] <- "POPRmono"
+names(anppMonoAvgWide)[names(anppMonoAvgWide)=="Schizachyrium.scoparium"] <- "SCSCmono"
+names(anppMonoAvgWide)[names(anppMonoAvgWide)=="Solidago.rigida"] <- "SORImono"
+names(anppMonoAvgWide)[names(anppMonoAvgWide)=="Sorghastrum.nutans"] <- "SONUmono"
 
+#calculate total plot biomass
+anppSum <- with(anppPoly, aggregate(anpp, by=list(year=year, plot=plot, ring=ring, CO2_trt=CO2_trt, N_trt=N_trt, spp_count=spp_count, group_count=group_count, experiment=experiment, monogroup=monogroup, Achillea.millefolium=Achillea.millefolium, Agropyron.repens=Agropyron.repens, Amorpha.canescens=Amorpha.canescens, Andropogon.gerardi=Andropogon.gerardi, Anemone.cylindrica=Anemone.cylindrica, Asclepias.tuberosa=Asclepias.tuberosa, Bouteloua.gracilis=Bouteloua.gracilis, Bromus.inermis=Bromus.inermis, Koeleria.cristata=Koeleria.cristata, Lespedeza.capitata=Lespedeza.capitata, Lupinus.perennis=Lupinus.perennis, Petalostemum.villosum=Petalostemum.villosum, Poa.pratensis=Poa.pratensis, Schizachyrium.scoparium=Schizachyrium.scoparium, Solidago.rigida=Solidago.rigida, Sorghastrum.nutans=Sorghastrum.nutans, C.3=C.3, C.4=C.4, Forb=Forb, Legume=Legume, legume_spp=legume_spp, legume_num=legume_num, trt=trt, spp_trt=spp_trt), FUN=sum))
+names(anppSum)[names(anppSum)=="x"] <- "total_biomass"
 
+#merge monoculture averages with polyculture data
+anppRY <- merge(anppSum, anppMonoAvgWide, all=T)
 
+#calculate expected yield from monoculture biomass
+anppRY$ACMImono2 <- with(anppRY, ifelse(Achillea.millefolium==1, ACMImono, 0))
+anppRY$AGREmono2 <- with(anppRY, ifelse(Agropyron.repens==1, AGREmono, 0))
+anppRY$AMCAmono2 <- with(anppRY, ifelse(Amorpha.canescens==1, AMCAmono, 0))
+anppRY$ANGEmono2 <- with(anppRY, ifelse(Andropogon.gerardi==1, ANGEmono, 0))
+anppRY$ANCYmono2 <- with(anppRY, ifelse(Anemone.cylindrica==1, ANCYmono, 0))
+anppRY$ANCYmono2[is.na(anppRY$ANCYmono2)] <- 0
+anppRY$ASTUmono2 <- with(anppRY, ifelse(Asclepias.tuberosa==1, ASTUmono, 0))
+anppRY$BOGRmono2 <- with(anppRY, ifelse(Bouteloua.gracilis==1, BOGRmono, 0))
+anppRY$BRINmono2 <- with(anppRY, ifelse(Bromus.inermis==1, BRINmono, 0))
+anppRY$KOCRmono2 <- with(anppRY, ifelse(Koeleria.cristata==1, KOCRmono, 0))
+anppRY$LECAmono2 <- with(anppRY, ifelse(Lespedeza.capitata==1, LECAmono, 0))
+anppRY$LUPEmono2 <- with(anppRY, ifelse(Lupinus.perennis==1, LUPEmono, 0))
+anppRY$PEVImono2 <- with(anppRY, ifelse(Petalostemum.villosum==1, PEVImono, 0))
+anppRY$POPRmono2 <- with(anppRY, ifelse(Poa.pratensis==1, POPRmono, 0))
+anppRY$SCSCmono2 <- with(anppRY, ifelse(Schizachyrium.scoparium==1, SCSCmono, 0))
+anppRY$SORImono2 <- with(anppRY, ifelse(Solidago.rigida==1, SORImono, 0))
+anppRY$SONUmono2 <- with(anppRY, ifelse(Sorghastrum.nutans==1, SONUmono, 0))
+anppRY$exp_yield <- with(anppRY, ifelse(spp_count==4, (ACMImono2+AGREmono2+AMCAmono2+ANGEmono2+ANCYmono2+ASTUmono2+BOGRmono2+BRINmono2+KOCRmono2+LECAmono2+LUPEmono2+PEVImono2+POPRmono2+SCSCmono2+SORImono2+SONUmono2)/4, 
+                                        ifelse(spp_count==9, (ACMImono2+AGREmono2+AMCAmono2+ANGEmono2+ANCYmono2+ASTUmono2+BOGRmono2+BRINmono2+KOCRmono2+LECAmono2+LUPEmono2+PEVImono2+POPRmono2+SCSCmono2+SORImono2+SONUmono2)/9, (ACMImono2+AGREmono2+AMCAmono2+ANGEmono2+ANCYmono2+ASTUmono2+BOGRmono2+BRINmono2+KOCRmono2+LECAmono2+LUPEmono2+PEVImono2+POPRmono2+SCSCmono2+SORImono2+SONUmono2)/16)))
 
-
-
-
-
-
-
-
-
+#calculate relative yield total
+anppRY$RYT <- with(anppRY, total_biomass/exp_yield)
