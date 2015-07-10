@@ -251,9 +251,38 @@ qqnorm(legume4to1complete$diff_log)
 ##############################################
 ##############################################
 
+#get anpp hedges d
+anppTrtMeans <- ddply(subset(anppPolyRY, spp_count==4), c('year', 'spp_type', 'trt'), summarise,
+                      anpp_mean=mean(anpp),
+                      anpp_sd=sd(anpp),
+                      anpp_n=length(anpp))
 
+anppRRmean <- dcast(anppTrtMeans, year + spp_type ~ trt, value.var='anpp_mean')
+anppRRsd <- dcast(anppTrtMeans, year + spp_type ~ trt, value.var='anpp_sd')
+names(anppRRsd)[names(anppRRsd)=='Camb_Namb'] <- 'ctl_sd'
+names(anppRRsd)[names(anppRRsd)=='Camb_Nenrich'] <- 'N_sd'
+names(anppRRsd)[names(anppRRsd)=='Cenrich_Namb'] <- 'CO2_sd'
+names(anppRRsd)[names(anppRRsd)=='Cenrich_Nenrich'] <- 'CO2_N_sd'
+anppRRn <- dcast(anppTrtMeans, year + spp_type ~ trt, value.var='anpp_n')
+names(anppRRn)[names(anppRRn)=='Camb_Namb'] <- 'ctl_n'
+names(anppRRn)[names(anppRRn)=='Camb_Nenrich'] <- 'N_n'
+names(anppRRn)[names(anppRRn)=='Cenrich_Namb'] <- 'CO2_n'
+names(anppRRn)[names(anppRRn)=='Cenrich_Nenrich'] <- 'CO2_N_n'
+anppRRmeansd <- merge(anppRRmean, anppRRsd)
+anppRR <- merge(anppRRmeansd, anppRRn)
+anppRR$hedgesd_CO2 <- with(anppRR, ((Cenrich_Namb-Camb_Namb)/sqrt((CO2_sd*(CO2_n-1)+ctl_sd*(ctl_n-1))/(CO2_n+ctl_n-2)))*(1-(3/(4*(CO2_n+ctl_n-2)-1))))
+anppRR$hedgesd_N <- with(anppRR, ((Camb_Nenrich-Camb_Namb)/sqrt((N_sd*(N_n-1)+ctl_sd*(ctl_n-1))/(N_n+ctl_n-2)))*(1-(3/(4*(N_n+ctl_n-2)-1))))
+anppRR$hedgesd_CO2_N <- with(anppRR, ((Cenrich_Nenrich-Camb_Namb)/sqrt((CO2_N_sd*(CO2_N_n-1)+ctl_sd*(ctl_n-1))/(CO2_N_n+ctl_n-2)))*(1-(3/(4*(CO2_N_n+ctl_n-2)-1))))
+anppRR$hedgesd_var_CO2 <- with(anppRR, ((CO2_n+ctl_n)/(CO2_n*ctl_n))+((hedgesd_CO2^2)/(2*(CO2_n+ctl_n))))
+anppRR$hedgesd_var_N <- with(anppRR, ((N_n+ctl_n)/(N_n*ctl_n))+((hedgesd_N^2)/(2*(N_n+ctl_n))))
+anppRR$hedgesd_var_CO2_N <- with(anppRR, ((CO2_N_n+ctl_n)/(CO2_N_n*ctl_n))+((hedgesd_CO2_N^2)/(2*(CO2_N_n+ctl_n))))
+anppRR$hedgesd_ci_CO2 <- 1.96*anppRR$hedgesd_var_CO2
+anppRR$hedgesd_ci_N <- 1.96*anppRR$hedgesd_var_N
+anppRR$hedgesd_ci_CO2_N <- 1.96*anppRR$hedgesd_var_CO2_N
 
+##############################################
+##############################################
 
 
 #clean up workspace
-rm(list=c('anpp', 'anpp16', 'anppAll', 'anppInitial', 'anppInitialYear', 'anppLast', 'anppLastLong', 'anppLastLongComplete', 'anppMax', 'anppMono', 'anppMonoAvgWide', 'anppMonoAvg', 'anppPoly',  'anppNoTrt', 'anppSum', 'anppTrt', 'anppTrue16', 'anppTrue16Trt', 'anppTrue16TrtNonzero', 'trt', 'anppSub', 'legume1', 'legume1mean', 'legume4', 'legume4mean', 'legume4to1'))
+rm(list=c('anpp', 'anpp16', 'anppAll', 'anppInitial', 'anppInitialYear', 'anppLast', 'anppLastLong', 'anppLastLongComplete', 'anppMax', 'anppMono', 'anppMonoAvgWide', 'anppMonoAvg', 'anppPoly',  'anppNoTrt', 'anppSum', 'anppTrt', 'anppTrue16', 'anppTrue16Trt', 'anppTrue16TrtNonzero', 'trt', 'anppSub', 'legume1', 'legume1mean', 'legume4', 'legume4mean', 'legume4to1', 'anppTrtMeans', 'anppRRmean', 'anppRRmeansd', 'anppRRn', 'anppRRsd'))
