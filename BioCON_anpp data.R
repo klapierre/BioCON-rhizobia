@@ -172,9 +172,6 @@ anppRY$exp_yield <- with(anppRY, ifelse(spp_count==4, (ACMImono2+AGREmono2+AMCAm
 #calculate relative yield total
 anppRY$RYT <- with(anppRY, total_biomass/exp_yield)
 
-##############################################
-##############################################
-
 #check RYT for normality within plots
 shapiro.test(anppRY$RYT)
 qqnorm(anppRY$RYT)
@@ -208,9 +205,6 @@ anppPolyRY$other_legs <- with(anppPolyRY, as.factor(ifelse(leg_num_spp=='0 legum
                                                            ifelse(leg_num_spp=='2 legumes', '2 legumes',
                                                                   ifelse(leg_num_spp=='4 legumes', '4 legumes', 'single legume')))))
 
-##############################################
-##############################################
-
 #normalize data
 
 qqnorm(anppPolyRY$RY)
@@ -220,5 +214,34 @@ qqnorm(anppPolyRY$logRY)
 ##############################################
 ##############################################
 
+#difference between 1 and 4 legume plots
+legume4 <- subset(anppPolyRY, spp_count==4 & other_legs=='4 legumes')
+legume4mean <- with(legume4, aggregate(RY, list(species=species, year=year, CO2_trt=CO2_trt, N_trt=N_trt, trt=trt), mean))
+names(legume4mean)[names(legume4mean)=='x'] <- 'RY4'
+legume4mean$logRY4 <- log10(legume4mean$RY4)
+
+legume1 <- subset(anppPolyRY, spp_count==4 & other_legs=='single legume')
+legume1mean <- with(legume1, aggregate(RY, list(species=species, year=year, CO2_trt=CO2_trt, N_trt=N_trt, trt=trt), mean))
+names(legume1mean)[names(legume1mean)=='x'] <- 'RY1'
+legume1mean$logRY1 <- log10(legume1mean$RY1)
+
+legume4to1 <- merge(legume4mean, legume1mean, all=T)
+legume4to1complete <- legume4to1[complete.cases(legume4to1[,c(7,9)]),]
+legume4to1complete$diff <- legume4to1complete$RY4-legume4to1complete$RY1
+legume4to1complete$diff_log <- legume4to1complete$logRY4-legume4to1complete$logRY1
+
+shapiro.test(legume4to1complete$diff)
+qqnorm(legume4to1complete$diff)
+
+shapiro.test(legume4to1complete$diff_log)
+qqnorm(legume4to1complete$diff_log)
+
+##############################################
+##############################################
+
+
+
+
+
 #clean up workspace
-rm(list=c('anpp', 'anpp16', 'anppAll', 'anppInitial', 'anppInitialYear', 'anppLast', 'anppLastLong', 'anppLastLongComplete', 'anppMax', 'anppMono', 'anppMonoAvgWide', 'anppMonoAvg', 'anppPoly',  'anppNoTrt', 'anppSum', 'anppTrt', 'anppTrue16', 'anppTrue16Trt', 'anppTrue16TrtNonzero', 'trt', 'anppSub'))
+rm(list=c('anpp', 'anpp16', 'anppAll', 'anppInitial', 'anppInitialYear', 'anppLast', 'anppLastLong', 'anppLastLongComplete', 'anppMax', 'anppMono', 'anppMonoAvgWide', 'anppMonoAvg', 'anppPoly',  'anppNoTrt', 'anppSum', 'anppTrt', 'anppTrue16', 'anppTrue16Trt', 'anppTrue16TrtNonzero', 'trt', 'anppSub', 'legume1', 'legume1mean', 'legume4', 'legume4mean', 'legume4to1'))
