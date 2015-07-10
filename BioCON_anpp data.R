@@ -192,4 +192,4 @@ qqnorm(anppRY$logRYT)
 ##############################################
 
 #clean up workspace
-rm(list=c('anpp', 'anpp16', 'anppAll', 'anppInitial', 'anppInitialYear', 'anppLast', 'anppLastLong', 'anppLastLongComplete', 'anppMax', 'anppMono', 'anppMonoAvg', 'anppMonoAvgWide', 'anppNoTrt', 'anppPoly', 'anppSum', 'anppTrt', 'anppTrue16', 'anppTrue16Trt', 'anppTrue16TrtNonzero', 'trt', 'anppSub'))
+rm(list=c('anpp', 'anpp16', 'anppAll', 'anppInitial', 'anppInitialYear', 'anppLast', 'anppLastLong', 'anppLastLongComplete', 'anppMax', 'anppMono', 'anppMonoAvgWide', 'anppNoTrt', 'anppSum', 'anppTrt', 'anppTrue16', 'anppTrue16Trt', 'anppTrue16TrtNonzero', 'trt', 'anppSub'))
