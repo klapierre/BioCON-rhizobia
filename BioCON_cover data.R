@@ -1,5 +1,7 @@
 setwd('C:\\Users\\Kim\\Desktop\\BioCON rhizobia\\BioCON data')
 
+source('C:\\Users\\Kim\\Desktop\\BioCON rhizobia\\BioCON data\\BioCON-rhizobia\\BioCON_treatment data.R', chdir=T)
+
 #cover data
 coverAll <- read.csv('e141_plant species percent cover.csv')
 
