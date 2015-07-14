@@ -1,3 +1,6 @@
+library(plyr)
+library(reshape2)
+
 setwd('C:\\Users\\Kim\\Desktop\\BioCON rhizobia\\BioCON data')
 
 source('C:\\Users\\Kim\\Desktop\\BioCON rhizobia\\BioCON data\\BioCON-rhizobia\\BioCON_treatment data.R', chdir=T)
