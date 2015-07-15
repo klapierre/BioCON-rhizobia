@@ -16,9 +16,14 @@ source('C:\\Users\\Kim\\Desktop\\BioCON rhizobia\\BioCON data\\BioCON-rhizobia\\
 setwd('C:\\Users\\Kim\\Desktop\\BioCON rhizobia\\BioCON data')
 
 #merge ANPP and climate data
-anppClimate <- merge(anppRY, climate)
+anppClimateInitial <- merge(anppRY, climate)
 polyClimate <- merge(anppPolyRY, climate)
 RRclimate <- merge(anppRR, climate)
+anppMonoClimateInitial <- merge(anppMono, climate)
+
+#remove outliers
+anppClimate <- subset(anppClimateInitial, RYT<8.5)
+anppMonoClimate <- subset(anppMonoClimateInitial, anpp<1100)
 
 #mixed model
 #do legumes or non-legumes respond more to CO2 and N?
@@ -35,6 +40,24 @@ ggplot(barGraphStats(data=subset(polyClimate, spp_count==4), variable='RYscaled_
   ylab('log Relative Yield') +
   theme(axis.title.x=element_blank())
 
+
+#mixed model
+#do different legume species respond more to CO2 and N?
+#this is just species biomass in monoculture
+trtLegSppMixed <- lme(anpp ~ CO2_trt*N_trt*species, random=~1|plot, data=subset(anppMonoClimate, legume_num==1))
+summary(trtLegSppMixed)
+anova(trtLegSppMixed)
+
+color <- c("#E69F00", "#009E73", "#0072B2", "#CC79A7")
+ggplot(barGraphStats(data=subset(anppMonoClimate, legume_num==1), variable='anpp', byFactorNames=c('species', 'trt')), aes(x=species, y=mean, fill=trt)) +
+  geom_bar(stat='identity', position=position_dodge()) +
+  scale_fill_manual(values=color) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0.2, position=position_dodge(0.9)) +
+  ylab('ANPP (g m-2)') +
+  theme(axis.title.x=element_blank())
+
+
+#hedges' d of legumes vs non-legumes in 4 spp polycultures
 #does hedgesd vary with gy precip?
 summary(lm(hedgesd_CO2 ~ gy_precip_cm*spp_type, data=RRclimate)) #yes (marginal)
 summary(lm(hedgesd_N ~ gy_precip_cm*spp_type, data=RRclimate)) #yes
@@ -85,7 +108,7 @@ print(Nplot, vp=viewport(layout.pos.row=1, layout.pos.col=2))
 print(CO2Nplot, vp=viewport(layout.pos.row=1, layout.pos.col=3))
 
 
-
+#legume species' hedges d by specis
 #mixed model with hedges d
 hedgesdModelSpp <- lm(hedges_d ~ year*trt*species , data=anppHedgesDSpp)
 summary(hedgesdModelSpp)
