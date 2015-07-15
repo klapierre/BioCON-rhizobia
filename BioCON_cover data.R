@@ -160,6 +160,11 @@ plot(coverANPPtotal$anpp_total~coverANPPtotal$cover_total)
 
 
 
+##############################################
+##############################################
+
+#clean up workspace
+rm(list=c('cover16','coverAll','coverANPPacmi','coverANPPacmiModel','coverANPPagre','coverANPPagreModel','coverANPPamca','coverANPPamcaModel','coverANPPancy','coverANPPancyModel','coverANPPange','coverANPPangeModel','coverANPPastu','coverANPPastuModel','coverANPPbogr','coverANPPbogrModel','coverANPPbrin','coverANPPbrinModel','coverANPPkocr','coverANPPkocrModel','coverANPPleca','coverANPPlecaModel','coverANPPlupe','coverANPPlupeModel','coverANPPmodel','coverANPPpevi','coverANPPpeviModel','coverANPPpopr','coverANPPpoprModel','coverANPPscsc','coverANPPscscModel','coverANPPsonu','coverANPPsonuModel','coverANPPsori','coverANPPsoriModel','coverANPPtotal','coverANPPtotalModel','coverMax','coverWater'))
 
 
 
