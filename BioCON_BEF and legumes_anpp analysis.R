@@ -16,11 +16,13 @@ source('C:\\Users\\Kim\\Desktop\\BioCON rhizobia\\BioCON data\\BioCON-rhizobia\\
 setwd('C:\\Users\\Kim\\Desktop\\BioCON rhizobia\\BioCON data')
 
 #merge ANPP and climate data
-anppClimate <- merge(anppRY, climate)
+anppClimateInitial <- merge(anppRY, climate)
 polyClimate <- merge(anppPolyRY, climate)
-legume4to1Climate <- merge(legume4to1complete, climate)
+legume4to1ClimateInitial <- merge(legume4to1complete, climate)
 
-
+#remove outliers
+anppClimate <- subset(anppClimateInitial, RYT<8.5)
+legume4to1Climate <- subset(legume4to1ClimateInitial, diff<5)
 
 ##############################################
 ##############################################
@@ -66,34 +68,42 @@ ggplot(barGraphStats(data=subset(anppClimate, spp_count==4 & trt=='Camb_Namb'), 
 
 #mixed model
 #IMPORTANT: 4 spp polycultures, only included plots with one of the four legumes (intra-functional group differences)
-RYTmixedCategoricalLegs <- lme(logRYT ~ gy_precip_cm*leg_num_spp, random=~1|plot, data=subset(anppClimate, spp_count==4 & trt=='Camb_Namb' & leg_num_spp!='mix' & leg_num_spp!='none' & leg_num_spp!='all 4'))
+RYTmixedCategoricalLegs <- lme(logRYT ~ gy_precip_cm*leg_num_spp, random=~1|plot, data=subset(anppClimate, spp_count==4 & trt=='Camb_Namb' & leg_num_spp!='0 legumes' & leg_num_spp!='2 legumes' & leg_num_spp!='3 legumes' & leg_num_spp!='4 legumes'))
 summary(RYTmixedCategoricalLegs)
 anova(RYTmixedCategoricalLegs)
 lsmeans(RYTmixedCategoricalLegs, cld~leg_num_spp)
 
-color <- c("#E69F00", "#009E73", "#0072B2", "#CC79A7")
-
-ggplot(subset(anppClimate, spp_count==4 & trt=='Camb_Namb' & legume_num==1), aes(x=gy_precip_cm, y=logRYT, colour=order)) +
-  geom_point(size=2) +
-  geom_smooth(method=lm, size=1) +
+ggplot(barGraphStats(data=subset(anppClimate, spp_count==4 & legume_num==1 & trt=='Camb_Namb'), variable='logRYT', byFactorNames=c('order')), aes(x=order, y=mean)) +
+  geom_bar(stat='identity', fill='white', colour='black') +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se, width=0.2)) +
   ylab('log Relative Yield Total') +
-  xlab('Total Annual Precipitation (cm)') +
-  scale_colour_manual(values=color)
+  theme(axis.title.x=element_blank()) +
+  annotate('text', x=c(1,4), y=c(0.14,0.08), label='a', size=8) +
+  annotate('text', x=c(2,3), y=c(0.33,0.36), label='b', size=8) +
+  coord_cartesian(ylim=c(0,0.4))
+
+# color <- c("#E69F00", "#009E73", "#0072B2", "#CC79A7")
+# 
+# ggplot(subset(anppClimate, spp_count==4 & trt=='Camb_Namb' & legume_num==1), aes(x=gy_precip_cm, y=logRYT, colour=order)) +
+#   geom_point(size=2) +
+#   geom_smooth(method=lm, size=1) +
+#   ylab('log Relative Yield Total') +
+#   xlab('Total Annual Precipitation (cm)') +
+#   scale_colour_manual(values=color)
 
 
 #mixed model
 #effect of other legumes on RY of each legume species
-RYmodel <- lme(logRY ~ gy_precip_cm*other_legs, random=~1|plot, data=subset(polyClimate, spp_count==4 & trt=='Camb_Namb' & legume_num!=0 & legume_num!=2 & legume_num!=3))
+RYmodel <- lme(logRY ~ other_legs, random=~1|plot, data=subset(polyClimate, spp_count==4 & trt=='Camb_Namb' & legume_num!=0 & legume_num!=2 & legume_num!=3))
 summary(RYmodel)
 anova(RYmodel)
 
 polyClimate$order <- factor(polyClimate$other_legs, levels=c('0 legumes', 'single legume', '2 legumes', '3 legumes', '4 legumes'))
-ggplot(barGraphStats(data=subset(polyClimate, spp_count==4 & trt=='Camb_Namb' & leg_num_spp!='2 legumes' & leg_num_spp!='3 legumes' & Legume==1 & spp_type=='legume'), variable='logRY', byFactorNames=c('species', 'order', 'gy_precip_cm')), aes(x=species, y=mean, fill=order)) +
+ggplot(barGraphStats(data=subset(polyClimate, spp_count==4 & trt=='Camb_Namb' & leg_num_spp!='2 legumes' & leg_num_spp!='3 legumes' & Legume==1 & spp_type=='legume'), variable='logRY', byFactorNames=c('species', 'order')), aes(x=species, y=mean, fill=order)) +
   geom_bar(stat='identity', position=position_dodge(), colour='black') +
   scale_fill_manual(values=c("white", "grey")) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0.2, position=position_dodge(0.9)) +
   ylab('log Relative Yield') +
-  facet_wrap(~gy_precip_cm, ncol=4) +
   theme(axis.text.x=element_text(angle=45, hjust=1, vjust=1), axis.title.x=element_blank())
 
 
@@ -111,4 +121,3 @@ ggplot(subset(legume4to1Climate, trt=='Camb_Namb'), aes(x=gy_precip_cm, y=diff, 
   ylab('Difference in Relative Yield') +
   scale_colour_manual(values=color,
                       labels=c('Amorpha canescens', 'Lespedeza capitata', 'Lupinus perennis', 'Petalostemum villosum'))
-
