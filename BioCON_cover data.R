@@ -1,5 +1,6 @@
 library(plyr)
 library(reshape2)
+library(car)
 
 setwd('C:\\Users\\Kim\\Desktop\\BioCON rhizobia\\BioCON data')
 
@@ -47,87 +48,104 @@ coverANPP <- merge(coverMax, anppMax, by=c('year', 'plot', 'ring', 'CO2_trt', 'N
 
 #linear model comparing cover and ANPP across species
 coverANPPmodel <- lm(anpp~cover, data=coverANPP)
+outlierTest(coverANPPmodel)
 summary(coverANPPmodel)
 plot(coverANPP$anpp~coverANPP$cover)
 
 #subset each species
 coverANPPacmi <- subset(coverANPP, species=='Achillea millefolium')
 coverANPPacmiModel <- lm(anpp~cover, data=coverANPPacmi)
+outlierTest(coverANPPacmiModel)
 summary(coverANPPacmiModel)
 plot(coverANPPacmi$anpp~coverANPPacmi$cover)
 
 coverANPPastu <- subset(coverANPP, species=='Asclepias tuberosa')
 coverANPPastuModel <- lm(anpp~cover, data=coverANPPastu)
+outlierTest(coverANPPastuModel)
 summary(coverANPPastuModel)
 plot(coverANPPastu$anpp~coverANPPastu$cover)
 
 coverANPPkocr <- subset(coverANPP, species=='Koeleria cristata')
 coverANPPkocrModel <- lm(anpp~cover, data=coverANPPkocr)
+outlierTest(coverANPPkocrModel)
 summary(coverANPPkocrModel)
 plot(coverANPPkocr$anpp~coverANPPkocr$cover)
 
 coverANPPlupe <- subset(coverANPP, species=='Lupinus perennis')
 coverANPPlupeModel <- lm(anpp~cover, data=coverANPPlupe)
+outlierTest(coverANPPlupeModel)
 summary(coverANPPlupeModel)
 plot(coverANPPlupe$anpp~coverANPPlupe$cover)
 
 coverANPPpopr <- subset(coverANPP, species=='Poa pratensis')
 coverANPPpoprModel <- lm(anpp~cover, data=coverANPPpopr)
+outlierTest(coverANPPpoprModel)
 summary(coverANPPpoprModel)
 plot(coverANPPpopr$anpp~coverANPPpopr$cover)
 
 coverANPPsonu <- subset(coverANPP, species=='Sorghastrum nutans') #NOTE: very poor fit
 coverANPPsonuModel <- lm(anpp~cover, data=coverANPPsonu)
+outlierTest(coverANPPsonuModel)
 summary(coverANPPsonuModel)
 plot(coverANPPsonu$anpp~coverANPPsonu$cover)
 
 coverANPPagre <- subset(coverANPP, species=='Agropyron repens')
 coverANPPagreModel <- lm(anpp~cover, data=coverANPPagre)
+outlierTest(coverANPPagreModel)
 summary(coverANPPagreModel)
 plot(coverANPPagre$anpp~coverANPPagre$cover)
 
 coverANPPange <- subset(coverANPP, species=='Andropogon gerardi')
 coverANPPangeModel <- lm(anpp~cover, data=coverANPPange)
+outlierTest(coverANPPangeModel)
 summary(coverANPPangeModel)
 plot(coverANPPange$anpp~coverANPPange$cover)
 
 coverANPPbrin <- subset(coverANPP, species=='Bromus inermis')
 coverANPPbrinModel <- lm(anpp~cover, data=coverANPPbrin)
+outlierTest(coverANPPbrinModel)
 summary(coverANPPbrinModel)
 plot(coverANPPbrin$anpp~coverANPPbrin$cover)
 
 coverANPPpevi <- subset(coverANPP, species=='Petalostemum villosum')
 coverANPPpeviModel <- lm(anpp~cover, data=coverANPPpevi)
+outlierTest(coverANPPpeviModel)
 summary(coverANPPpeviModel)
 plot(coverANPPpevi$anpp~coverANPPpevi$cover)
 
 coverANPPamca <- subset(coverANPP, species=='Amorpha canescens')
 coverANPPamcaModel <- lm(anpp~cover, data=coverANPPamca)
+outlierTest(coverANPPamcaModel)
 summary(coverANPPamcaModel)
 plot(coverANPPamca$anpp~coverANPPamca$cover)
 
 coverANPPbogr <- subset(coverANPP, species=='Bouteloua gracilis')
 coverANPPbogrModel <- lm(anpp~cover, data=coverANPPbogr)
+outlierTest(coverANPPbogrModel)
 summary(coverANPPbogrModel)
 plot(coverANPPbogr$anpp~coverANPPbogr$cover)
 
 coverANPPscsc <- subset(coverANPP, species=='Schizachyrium scoparium')
 coverANPPscscModel <- lm(anpp~cover, data=coverANPPscsc)
+outlierTest(coverANPPscscModel)
 summary(coverANPPscscModel)
 plot(coverANPPscsc$anpp~coverANPPscsc$cover)
 
 coverANPPsori <- subset(coverANPP, species=='Solidago rigida')
 coverANPPsoriModel <- lm(anpp~cover, data=coverANPPsori)
+outlierTest(coverANPPsoriModel)
 summary(coverANPPsoriModel)
 plot(coverANPPsori$anpp~coverANPPsori$cover)
 
 coverANPPancy <- subset(coverANPP, species=='Anemone cylindrica')
 coverANPPancyModel <- lm(anpp~cover, data=coverANPPancy)
+outlierTest(coverANPPancyModel)
 summary(coverANPPancyModel)
 plot(coverANPPancy$anpp~coverANPPancy$cover)
 
 coverANPPleca <- subset(coverANPP, species=='Lespedeza capitata')
 coverANPPlecaModel <- lm(anpp~cover, data=coverANPPleca)
+outlierTest(coverANPPlecaModel)
 summary(coverANPPlecaModel)
 plot(coverANPPleca$anpp~coverANPPleca$cover)
 
