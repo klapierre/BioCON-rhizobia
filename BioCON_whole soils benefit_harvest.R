@@ -52,7 +52,10 @@ harvestAll <- merge(plan, harvest, by=c('plot', 'species', 'replicate'), all=T)
 
 #merge harvest data with treatment information
 harvestTrt <- merge(harvestAll, trt, by=c('ring', 'plot'), all=T)%>%
-  filter(year!='NA')
+  filter(!is.na(year))%>%
+  mutate(LECA_trt=as.factor(paste(Lespedeza.capitata, tot_legume, sep='::')), LUPE_trt=as.factor(paste(Lupinus.perennis, tot_legume, sep='::')))
+  harvestTrt$LECA_trt2 <- as.factor(with(harvestTrt, ifelse(LECA_trt=='0::1', 'Other Legume', ifelse(LECA_trt=='1::1', 'Self', ifelse(LECA_trt=='1::4', 'All Legumes', 'NA')))))
+  harvestTrt$LUPE_trt2 <- as.factor(with(harvestTrt, ifelse(LUPE_trt=='0::1', 'Other Legume', ifelse(LUPE_trt=='1::1', 'Self', ifelse(LUPE_trt=='1::4', 'All Legumes', 'NA')))))
 
 
 
@@ -119,6 +122,7 @@ summary(lmer(total_nod ~ Lupinus.perennis + tot_legume + (1|spp_count), data=sub
 harvestRel$orderLECA <- factor(harvestRel$Lespedeza.capitata, levels=c('0', '1'))
 harvestRel$orderLUPE <- factor(harvestRel$Lupinus.perennis, levels=c('0', '1'))
 harvestRel$orderTotLeg <- factor(harvestRel$tot_legume, levels=c('1', '4'))
+
 
 feedbackLECAfig <- ggplot(barGraphStats(data=subset(harvestRel, species=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich'), variable='shoot_mass_rel', byFactorNames=c('orderTotLeg', 'orderLECA')), aes(x=orderTotLeg, y=mean, fill=orderLECA)) +
   geom_bar(stat='identity', position=position_dodge()) +
