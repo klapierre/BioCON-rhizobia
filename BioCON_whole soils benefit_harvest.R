@@ -1,5 +1,6 @@
 library(lme4)
 library(ggplot2)
+library(grid)
 library(tidyr)
 library(dplyr)
 
@@ -133,15 +134,79 @@ summary(lmer(total_nod ~ LECA_trt2 + (1|spp_count), data=subset(harvestRel, spec
 summary(lmer(total_nod ~ LUPE_trt2 + (1|spp_count), data=subset(harvestRel, species=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
 
 
-feedbackLECAfig <- ggplot(barGraphStats(data=subset(harvestRel, species=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich'), variable='shoot_mass_rel', byFactorNames=c('orderTotLeg', 'orderLECA')), aes(x=orderTotLeg, y=mean, fill=orderLECA)) +
+
+feedbackLECAbio <- ggplot(barGraphStats(data=subset(harvestRel, species=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich'), variable='total_biomass_rel', byFactorNames=c('LECA_trt2')), aes(x=LECA_trt2, y=mean)) +
   geom_bar(stat='identity', position=position_dodge()) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se), position=position_dodge(.9), width=0.2) +
-  xlab('Number of legumes in soil') + ylab('Relative shoot mass (g)')
+  xlab('') + ylab('Relative biomass (g)') +
+  scale_x_discrete(limits=c('Other Legume', 'Self', 'All Legumes')) +
+  coord_cartesian(ylim=c(-0.25,1.5)) +
+  annotate('text', x=0.5, y=1.4, label='(a) LECA Biomass', size=9, hjust=0) +
+  annotate('text', x=1, y=0.44, label='b', size=7) + 
+  annotate('text', x=2, y=0.75, label='b', size=7) +
+  annotate('text', x=3, y=0.07, label='a', size=7)
   
-feedbackLUPEfig <- ggplot(barGraphStats(data=subset(harvestRel, species=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich'), variable='shoot_mass_rel', byFactorNames=c('orderTotLeg', 'orderLUPE')), aes(x=orderTotLeg, y=mean, fill=orderLUPE)) +
+feedbackLUPEbio <- ggplot(barGraphStats(data=subset(harvestRel, species=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich'), variable='total_biomass_rel', byFactorNames=c('LUPE_trt2')), aes(x=LUPE_trt2, y=mean)) +
+  geom_bar(stat='identity', position=position_dodge()) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), position=position_dodge(.9), width=0.2) +
+  xlab('') + ylab('') +
+  scale_x_discrete(limits=c('Other Legume', 'Self', 'All Legumes')) +
+  coord_cartesian(ylim=c(-0.25, 1.5)) +
+  annotate('text', x=0.5, y=1.4, label='(b) LUPE Biomass', size=9, hjust=0)
+
+feedbackLECAnod <- ggplot(barGraphStats(data=subset(harvestRel, species=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich'), variable='total_nod', byFactorNames=c('LECA_trt2')), aes(x=LECA_trt2, y=mean)) +
+  geom_bar(stat='identity', position=position_dodge()) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), position=position_dodge(.9), width=0.2) +
+  xlab('Soil Origin') + ylab('Nodule Number') +
+  scale_x_discrete(limits=c('Other Legume', 'Self', 'All Legumes')) +
+  coord_cartesian(ylim=c(0,10)) +
+  annotate('text', x=0.5, y=9.5, label='(c) LECA Nodules', size=9, hjust=0)
+
+feedbackLUPEnod <- ggplot(barGraphStats(data=subset(harvestRel, species=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich'), variable='total_nod', byFactorNames=c('LUPE_trt2')), aes(x=LUPE_trt2, y=mean)) +
+  geom_bar(stat='identity', position=position_dodge()) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), position=position_dodge(.9), width=0.2) +
+  xlab('Soil Origin') + ylab('') +
+  scale_x_discrete(limits=c('Other Legume', 'Self', 'All Legumes')) +
+  coord_cartesian(ylim=c(0,10)) +
+  annotate('text', x=0.5, y=9.5, label='(d) LUPE Nodules', size=9, hjust=0)
+
+pushViewport(viewport(layout=grid.layout(2,2)))
+print(feedbackLECAbio, vp=viewport(layout.pos.row = 1, layout.pos.col = 1))
+print(feedbackLUPEbio, vp=viewport(layout.pos.row = 1, layout.pos.col = 2))
+print(feedbackLECAnod, vp=viewport(layout.pos.row = 2, layout.pos.col = 1))
+print(feedbackLUPEnod, vp=viewport(layout.pos.row = 2, layout.pos.col = 2))
+
+
+
+# ###not relativized by control biomass
+# 
+# #shoot mass
+# summary(lmer(shoot_mass ~ LECA_trt2 + (1|spp_count), data=subset(harvestRel, species=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+# 
+# summary(lmer(shoot_mass ~ LUPE_trt2 + (1|spp_count), data=subset(harvestRel, species=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+# 
+# #root mass
+# summary(lmer(root_mass ~ LECA_trt2 + (1|spp_count), data=subset(harvestRel, species=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+# 
+# summary(lmer(root_mass ~ LUPE_trt2 + (1|spp_count), data=subset(harvestRel, species=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+# 
+# #total biomass
+# summary(lmer(total_biomass ~ LECA_trt2 + (1|spp_count), data=subset(harvestRel, species=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+# 
+# summary(lmer(total_biomass ~ LUPE_trt2 + (1|spp_count), data=subset(harvestRel, species=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+
+
+feedbackLECAfig <- ggplot(barGraphStats(data=subset(harvestRel, species=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich'), variable='shoot_mass_rel', byFactorNames=c('LECA_trt2')), aes(x=LECA_trt2, y=mean)) +
   geom_bar(stat='identity', position=position_dodge()) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se), position=position_dodge(.9), width=0.2) +
   xlab('Number of legumes in soil') + ylab('Relative shoot mass (g)')
+
+feedbackLUPEfig <- ggplot(barGraphStats(data=subset(harvestRel, species=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich'), variable='shoot_mass_rel', byFactorNames=c('LUPE_trt2')), aes(x=LUPE_trt2, y=mean)) +
+  geom_bar(stat='identity', position=position_dodge()) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), position=position_dodge(.9), width=0.2) +
+  xlab('Number of legumes in soil') + ylab('Relative shoot mass (g)')
+
+
 
 ###quick ANOVA for CO2 and N trts
 summary(response <- lmer(shoot_mass ~ CO2_trt + N_trt + CO2_trt*N_trt + species + species*CO2_trt + species*N_trt + species*CO2_trt*N_trt + (1|ring), data=harvestRel))
