@@ -34,8 +34,8 @@ setwd('C:\\Users\\Kim\\Dropbox\\2015_NSF_LaPierre\\data\\La Pierre and Simms dat
 
 ###import data and planned replicates
 harvest <- read.csv('La Pierre_2015_CDR biocon_whole soil_harvest_corrected.csv')%>%
-  #calculate total nodule number
-  mutate(total_nod = pink_nod + white_nod)%>%
+  #calculate total nodule number and total biomass
+  mutate(total_nod = pink_nod + white_nod, total_biomass = shoot_mass + root_mass)%>%
   select(-notes)
 
 plan <- read.csv('La Pierre_2015_CDR biocon_whole soil_plots.csv')%>%
@@ -56,37 +56,46 @@ harvestTrt <- merge(harvestAll, trt, by=c('ring', 'plot'), all=T)%>%
   mutate(LECA_trt=as.factor(paste(Lespedeza.capitata, tot_legume, sep='::')), LUPE_trt=as.factor(paste(Lupinus.perennis, tot_legume, sep='::')))
   harvestTrt$LECA_trt2 <- as.factor(with(harvestTrt, ifelse(LECA_trt=='0::1', 'Other Legume', ifelse(LECA_trt=='1::1', 'Self', ifelse(LECA_trt=='1::4', 'All Legumes', 'NA')))))
   harvestTrt$LUPE_trt2 <- as.factor(with(harvestTrt, ifelse(LUPE_trt=='0::1', 'Other Legume', ifelse(LUPE_trt=='1::1', 'Self', ifelse(LUPE_trt=='1::4', 'All Legumes', 'NA')))))
+  harvestTrt <- harvestTrt%>% select(-LUPE_trt, -LECA_trt)
+    
 
 
 
 ###calculate the relative biomass compared to uninoculated controls (percent difference)
 #subset out the soil inoculation controls and inoculated plants
-harvestCtl <- harvestTrt%>%filter(is.na(experiment))
+harvestCtl <- harvestTrt%>% filter(is.na(experiment))
   names(harvestCtl)[names(harvestCtl)=='shoot_mass'] <- 'shoot_mass_ctl'
   names(harvestCtl)[names(harvestCtl)=='root_mass'] <- 'root_mass_ctl'
-harvestCtlShoot <- harvestCtl%>%select(-root_mass_ctl)%>%
+  names(harvestCtl)[names(harvestCtl)=='total_biomass'] <- 'total_biomass_ctl'
+harvestCtlShoot <- harvestCtl%>% select(-root_mass_ctl, -total_biomass_ctl)%>%
   group_by(plot, species)%>%
   summarise(shoot_mass_ctl=mean(shoot_mass_ctl))
   harvestCtlShoot$CO2_trt <- with(harvestCtlShoot, ifelse(plot=='aCO2aN', 'Camb', ifelse(plot=='aCO2eN', 'Camb', 'Cenrich')))
   harvestCtlShoot$N_trt <- with(harvestCtlShoot, ifelse(plot=='aCO2aN', 'Namb', ifelse(plot=='eCO2aN', 'Namb', 'Nenrich')))
-harvestCtlRoot <- harvestCtl%>%select(-shoot_mass_ctl)%>%
+harvestCtlRoot <- harvestCtl%>% select(-shoot_mass_ctl, -total_biomass_ctl)%>%
   group_by(plot, species)%>%
   summarise(root_mass_ctl=mean(root_mass_ctl))
   harvestCtlRoot$CO2_trt <- with(harvestCtlRoot, ifelse(plot=='aCO2aN', 'Camb', ifelse(plot=='aCO2eN', 'Camb', 'Cenrich')))
   harvestCtlRoot$N_trt <- with(harvestCtlRoot, ifelse(plot=='aCO2aN', 'Namb', ifelse(plot=='eCO2aN', 'Namb', 'Nenrich')))
+harvestCtlTotBio <- harvestCtl%>% select(-shoot_mass_ctl, -root_mass_ctl)%>%
+  group_by(plot, species)%>%
+  summarise(total_biomass_ctl=mean(total_biomass_ctl))
+  harvestCtlTotBio$CO2_trt <- with(harvestCtlTotBio, ifelse(plot=='aCO2aN', 'Camb', ifelse(plot=='aCO2eN', 'Camb', 'Cenrich')))
+  harvestCtlTotBio$N_trt <- with(harvestCtlTotBio, ifelse(plot=='aCO2aN', 'Namb', ifelse(plot=='eCO2aN', 'Namb', 'Nenrich')))
 harvestCtlAll <- merge(harvestCtlShoot, harvestCtlRoot, by=c('plot', 'species', 'CO2_trt', 'N_trt'))%>%
+  merge(harvestCtlTotBio, by=c('plot', 'species', 'CO2_trt', 'N_trt'))%>%
   select(-plot)
 
 #subset out inoculated plants
-harvestIno <- harvestTrt%>%filter(!is.na(experiment))
+harvestIno <- harvestTrt%>% filter(!is.na(experiment))
 
 #merge uninoculated controls back with inoculated plants, calculate relative cover, drop unneccesary columns
 harvestRel <- merge(harvestIno, harvestCtlAll, by=c('CO2_trt', 'N_trt', 'species'), all=T)%>%
-  mutate(shoot_mass_rel=((shoot_mass-shoot_mass_ctl)/shoot_mass_ctl), root_mass_rel=((root_mass-root_mass_ctl)/root_mass_ctl))%>%
-  select(-shoot_mass_ctl, -root_mass_ctl)%>%
+  mutate(shoot_mass_rel=((shoot_mass-shoot_mass_ctl)/shoot_mass_ctl), root_mass_rel=((root_mass-root_mass_ctl)/root_mass_ctl), total_biomass_rel=((total_biomass-total_biomass_ctl)/total_biomass_ctl))%>%
+  select(-shoot_mass_ctl, -root_mass_ctl, -total_biomass_ctl)%>%
   #average across replicates
-  group_by(CO2_trt, N_trt, species, ring, plot, year, spp_count, group_count, experiment, monospecies, monogroup, Achillea.millefolium, Agropyron.repens, Amorpha.canescens, Andropogon.gerardi, Anemone.cylindrica, Asclepias.tuberosa, Bouteloua.gracilis, Bromus.inermis, Koeleria.cristata, Lespedeza.capitata, Lupinus.perennis, Petalostemum.villosum, Poa.pratensis, Schizachyrium.scoparium, Solidago.rigida, Sorghastrum.nutans, C.3, C.4, Forb, Legume, tot_legume)%>%
-  summarise(shoot_mass=mean(shoot_mass), root_mass=mean(root_mass), pink_nod=mean(pink_nod), white_nod=mean(white_nod), total_nod=mean(total_nod), shoot_mass_rel=mean(shoot_mass_rel), root_mass_rel=mean(root_mass_rel))
+  group_by(CO2_trt, N_trt, species, ring, plot, year, spp_count, group_count, experiment, monospecies, monogroup, Achillea.millefolium, Agropyron.repens, Amorpha.canescens, Andropogon.gerardi, Anemone.cylindrica, Asclepias.tuberosa, Bouteloua.gracilis, Bromus.inermis, Koeleria.cristata, Lespedeza.capitata, Lupinus.perennis, Petalostemum.villosum, Poa.pratensis, Schizachyrium.scoparium, Solidago.rigida, Sorghastrum.nutans, C.3, C.4, Forb, Legume, tot_legume, LECA_trt2, LUPE_trt2)%>%
+  summarise(shoot_mass=mean(shoot_mass), root_mass=mean(root_mass), total_biomass=mean(total_biomass), pink_nod=mean(pink_nod), white_nod=mean(white_nod), total_nod=mean(total_nod), shoot_mass_rel=mean(shoot_mass_rel), root_mass_rel=mean(root_mass_rel), total_biomass_rel=mean(total_biomass_rel))
 
 
 ###soil feedbacks under control conditions
@@ -94,34 +103,34 @@ harvestRel <- merge(harvestIno, harvestCtlAll, by=c('CO2_trt', 'N_trt', 'species
 #separate models for each species
 
 #shoot mass
-summary(lmer(shoot_mass_rel ~ Lespedeza.capitata + tot_legume + (1|spp_count), data=subset(harvestRel, species=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+summary(lmer(shoot_mass_rel ~ LECA_trt2 + (1|spp_count), data=subset(harvestRel, species=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
 
-summary(lmer(shoot_mass_rel ~ Lupinus.perennis + tot_legume + (1|spp_count), data=subset(harvestRel, species=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+summary(lmer(shoot_mass_rel ~ LUPE_trt2 + (1|spp_count), data=subset(harvestRel, species=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
 
 #root mass
-summary(lmer(root_mass_rel ~ Lespedeza.capitata + tot_legume + (1|spp_count), data=subset(harvestRel, species=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+summary(lmer(root_mass_rel ~ LECA_trt2 + (1|spp_count), data=subset(harvestRel, species=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
 
-summary(lmer(root_mass_rel ~ Lupinus.perennis + tot_legume + (1|spp_count), data=subset(harvestRel, species=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+summary(lmer(root_mass_rel ~ LUPE_trt2 + (1|spp_count), data=subset(harvestRel, species=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+
+#total biomass
+summary(lmer(total_biomass_rel ~ LECA_trt2 + (1|spp_count), data=subset(harvestRel, species=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+
+summary(lmer(total_biomass_rel ~ LUPE_trt2 + (1|spp_count), data=subset(harvestRel, species=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
 
 #pink nodules
-summary(lmer(pink_nod ~ Lespedeza.capitata + tot_legume + (1|spp_count), data=subset(harvestRel, species=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+summary(lmer(pink_nod ~ LECA_trt2 + (1|spp_count), data=subset(harvestRel, species=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
 
-summary(lmer(pink_nod ~ Lupinus.perennis + tot_legume + (1|spp_count), data=subset(harvestRel, species=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+summary(lmer(pink_nod ~ LUPE_trt2 + (1|spp_count), data=subset(harvestRel, species=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
 
 #white nodules
-summary(lmer(white_nod ~ Lespedeza.capitata + tot_legume + (1|spp_count), data=subset(harvestRel, species=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+summary(lmer(white_nod ~ LECA_trt2 + (1|spp_count), data=subset(harvestRel, species=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
 
-summary(lmer(white_nod ~ Lupinus.perennis + tot_legume + (1|spp_count), data=subset(harvestRel, species=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+summary(lmer(white_nod ~ LUPE_trt2 + (1|spp_count), data=subset(harvestRel, species=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
 
 #total nodules
-summary(lmer(total_nod ~ Lespedeza.capitata + tot_legume + (1|spp_count), data=subset(harvestRel, species=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+summary(lmer(total_nod ~ LECA_trt2 + (1|spp_count), data=subset(harvestRel, species=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
 
-summary(lmer(total_nod ~ Lupinus.perennis + tot_legume + (1|spp_count), data=subset(harvestRel, species=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
-
-#plot results
-harvestRel$orderLECA <- factor(harvestRel$Lespedeza.capitata, levels=c('0', '1'))
-harvestRel$orderLUPE <- factor(harvestRel$Lupinus.perennis, levels=c('0', '1'))
-harvestRel$orderTotLeg <- factor(harvestRel$tot_legume, levels=c('1', '4'))
+summary(lmer(total_nod ~ LUPE_trt2 + (1|spp_count), data=subset(harvestRel, species=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
 
 
 feedbackLECAfig <- ggplot(barGraphStats(data=subset(harvestRel, species=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich'), variable='shoot_mass_rel', byFactorNames=c('orderTotLeg', 'orderLECA')), aes(x=orderTotLeg, y=mean, fill=orderLECA)) +
