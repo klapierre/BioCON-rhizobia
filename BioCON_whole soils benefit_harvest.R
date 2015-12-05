@@ -141,10 +141,10 @@ feedbackLECAbio <- ggplot(barGraphStats(data=subset(harvestRel, species=='LECA' 
   xlab('') + ylab('Relative biomass (g)') +
   scale_x_discrete(limits=c('Other Legume in Monoculture', 'Other Legume in Polyculture', 'Self in Monoculture', 'Self in Polyculture', 'All Legume Polyculture', '16 Species Polyculture')) +
   coord_cartesian(ylim=c(-0.25,1.5)) +
-  annotate('text', x=0.5, y=1.4, label='(a) LECA Biomass', size=9, hjust=0) +
-  annotate('text', x=1, y=0.44, label='b', size=7) + 
-  annotate('text', x=2, y=0.75, label='b', size=7) +
-  annotate('text', x=3, y=0.07, label='a', size=7)
+  annotate('text', x=0.5, y=1.4, label='(a) LECA Biomass', size=9, hjust=0) #+
+#   annotate('text', x=1, y=0.44, label='b', size=7) + 
+#   annotate('text', x=2, y=0.75, label='b', size=7) +
+#   annotate('text', x=3, y=0.07, label='a', size=7)
   
 feedbackLUPEbio <- ggplot(barGraphStats(data=subset(harvestRel, species=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich'), variable='total_biomass_rel', byFactorNames=c('LUPE_trt2')), aes(x=LUPE_trt2, y=mean)) +
   geom_bar(stat='identity', position=position_dodge()) +
@@ -194,42 +194,111 @@ print(feedbackLUPEnod, vp=viewport(layout.pos.row = 2, layout.pos.col = 2))
 # summary(lmer(total_biomass ~ LECA_trt2 + (1|spp_count), data=subset(harvestRel, species=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
 # 
 # summary(lmer(total_biomass ~ LUPE_trt2 + (1|spp_count), data=subset(harvestRel, species=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+# 
+# 
+# feedbackLECAbio <- ggplot(barGraphStats(data=subset(harvestRel, species=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich'), variable='total_biomass', byFactorNames=c('LECA_trt2')), aes(x=LECA_trt2, y=mean)) +
+#   geom_bar(stat='identity', position=position_dodge()) +
+#   geom_errorbar(aes(ymin=mean-se, ymax=mean+se), position=position_dodge(.9), width=0.2) +
+#   xlab('') + ylab('Relative biomass (g)') +
+#   scale_x_discrete(limits=c('Other Legume in Monoculture', 'Other Legume in Polyculture', 'Self in Monoculture', 'Self in Polyculture', 'All Legume Polyculture', '16 Species Polyculture')) #+
+# #   coord_cartesian(ylim=c(-0.25,1.5)) +
+# #   annotate('text', x=0.5, y=1.4, label='(a) LECA Biomass', size=9, hjust=0) +
+# #   annotate('text', x=1, y=0.44, label='b', size=7) + 
+# #   annotate('text', x=2, y=0.75, label='b', size=7) +
+# #   annotate('text', x=3, y=0.07, label='a', size=7)
+# 
+# feedbackLUPEbio <- ggplot(barGraphStats(data=subset(harvestRel, species=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich'), variable='total_biomass', byFactorNames=c('LUPE_trt2')), aes(x=LUPE_trt2, y=mean)) +
+#   geom_bar(stat='identity', position=position_dodge()) +
+#   geom_errorbar(aes(ymin=mean-se, ymax=mean+se), position=position_dodge(.9), width=0.2) +
+#   xlab('') + ylab('') +
+#   scale_x_discrete(limits=c('Other Legume in Monoculture', 'Other Legume in Polyculture', 'Self in Monoculture', 'Self in Polyculture', 'All Legume Polyculture', '16 Species Polyculture')) #+
+# #   coord_cartesian(ylim=c(-0.25, 1.5)) +
+# #   annotate('text', x=0.5, y=1.4, label='(b) LUPE Biomass', size=9, hjust=0)
+# 
+# feedbackLECAnod <- ggplot(barGraphStats(data=subset(harvestRel, species=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich'), variable='total_nod', byFactorNames=c('LECA_trt2')), aes(x=LECA_trt2, y=mean)) +
+#   geom_bar(stat='identity', position=position_dodge()) +
+#   geom_errorbar(aes(ymin=mean-se, ymax=mean+se), position=position_dodge(.9), width=0.2) +
+#   xlab('Soil Origin') + ylab('Nodule Number') +
+#   scale_x_discrete(limits=c('Other Legume in Monoculture', 'Other Legume in Polyculture', 'Self in Monoculture', 'Self in Polyculture', 'All Legume Polyculture', '16 Species Polyculture')) +
+#   coord_cartesian(ylim=c(0,10)) +
+#   annotate('text', x=0.5, y=9.5, label='(c) LECA Nodules', size=9, hjust=0)
+# 
+# feedbackLUPEnod <- ggplot(barGraphStats(data=subset(harvestRel, species=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich'), variable='total_nod', byFactorNames=c('LUPE_trt2')), aes(x=LUPE_trt2, y=mean)) +
+#   geom_bar(stat='identity', position=position_dodge()) +
+#   geom_errorbar(aes(ymin=mean-se, ymax=mean+se), position=position_dodge(.9), width=0.2) +
+#   xlab('Soil Origin') + ylab('') +
+#   scale_x_discrete(limits=c('Other Legume in Monoculture', 'Other Legume in Polyculture', 'Self in Monoculture', 'Self in Polyculture', 'All Legume Polyculture', '16 Species Polyculture')) +
+#   coord_cartesian(ylim=c(0,10)) +
+#   annotate('text', x=0.5, y=9.5, label='(d) LUPE Nodules', size=9, hjust=0)
+# 
+# pushViewport(viewport(layout=grid.layout(2,2)))
+# print(feedbackLECAbio, vp=viewport(layout.pos.row = 1, layout.pos.col = 1))
+# print(feedbackLUPEbio, vp=viewport(layout.pos.row = 1, layout.pos.col = 2))
+# print(feedbackLECAnod, vp=viewport(layout.pos.row = 2, layout.pos.col = 1))
+# print(feedbackLUPEnod, vp=viewport(layout.pos.row = 2, layout.pos.col = 2))
 
-
-feedbackLECAbio <- ggplot(barGraphStats(data=subset(harvestRel, species=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich'), variable='total_biomass', byFactorNames=c('LECA_trt2')), aes(x=LECA_trt2, y=mean)) +
+#summary LECA and LUPE results for presentation
+ggplot(barGraphStats(data=subset(harvestRel, species=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich' & LECA_trt2!='Other Legume in Monoculture' & LECA_trt2!='Other Legume in Polyculture' & LECA_trt2!='Self in Polyculture' & LECA_trt2!='All Legume Polyculture'), variable='total_nod', byFactorNames=c('LECA_trt2')), aes(x=LECA_trt2, y=mean)) +
   geom_bar(stat='identity', position=position_dodge()) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se), position=position_dodge(.9), width=0.2) +
+  xlab('Soil Origin') + ylab('Nodule Number') +
+  scale_x_discrete(labels=c('Self in Monoculture'='Grown Alone', '16 Species Polyculture'='All Legumes'), limits=c('Self in Monoculture', '16 Species Polyculture')) +
+  coord_cartesian(ylim=c(0,10)) +
+  annotate('text', x=0.5, y=9.5, label='(a) LECA Nodules', size=9, hjust=0) +
+  theme(axis.text.x=element_text(angle=45, hjust=1))
+
+ggplot(barGraphStats(data=subset(harvestRel, species=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich' & LUPE_trt2!='Other Legume in Monoculture' & LUPE_trt2!='Other Legume in Polyculture' & LUPE_trt2!='Self in Polyculture' & LUPE_trt2!='All Legume Polyculture'), variable='total_nod', byFactorNames=c('LUPE_trt2')), aes(x=LUPE_trt2, y=mean)) +
+  geom_bar(stat='identity', position=position_dodge()) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), position=position_dodge(.9), width=0.2) +
+  xlab('Soil Origin') + ylab('') +
+  scale_x_discrete(labels=c('Self in Monoculture'='Grown Alone', '16 Species Polyculture'='All Legumes'), limits=c('Self in Monoculture', '16 Species Polyculture')) +
+  coord_cartesian(ylim=c(0,10)) +
+  annotate('text', x=0.5, y=9.5, label='(b) LUPE Nodules', size=9, hjust=0) +
+  theme(axis.text.x=element_text(angle=45, hjust=1))
+
+
+
+###quick ANOVA for CO2 and N trts
+summary(response <- lmer(shoot_mass ~ CO2_trt + N_trt + CO2_trt*N_trt + species + species*CO2_trt + species*N_trt + species*CO2_trt*N_trt + (1|ring), data=harvestRel))
+
+feedbackLECAbio <- ggplot(barGraphStats(data=subset(harvestRel, species=='LECA'), variable='total_biomass_rel', byFactorNames=c('LECA_trt2', 'CO2_trt', 'N_trt')), aes(x=LECA_trt2, y=mean, fill=interaction(CO2_trt, N_trt))) +
+  geom_bar(stat='identity', position=position_dodge(0.9)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), position=position_dodge(.9), width=0.2) +
   xlab('') + ylab('Relative biomass (g)') +
-  scale_x_discrete(limits=c('Other Legume in Monoculture', 'Other Legume in Polyculture', 'Self in Monoculture', 'Self in Polyculture', 'All Legume Polyculture', '16 Species Polyculture')) #+
-#   coord_cartesian(ylim=c(-0.25,1.5)) +
-#   annotate('text', x=0.5, y=1.4, label='(a) LECA Biomass', size=9, hjust=0) +
+  scale_x_discrete(limits=c('Other Legume in Monoculture', 'Other Legume in Polyculture', 'Self in Monoculture', 'Self in Polyculture', 'All Legume Polyculture', '16 Species Polyculture')) +
+  coord_cartesian(ylim=c(-0.25,1.5)) +
+  annotate('text', x=0.5, y=1.4, label='(a) LECA Biomass', size=9, hjust=0)  +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) #+
 #   annotate('text', x=1, y=0.44, label='b', size=7) + 
 #   annotate('text', x=2, y=0.75, label='b', size=7) +
 #   annotate('text', x=3, y=0.07, label='a', size=7)
 
-feedbackLUPEbio <- ggplot(barGraphStats(data=subset(harvestRel, species=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich'), variable='total_biomass', byFactorNames=c('LUPE_trt2')), aes(x=LUPE_trt2, y=mean)) +
+feedbackLUPEbio <- ggplot(barGraphStats(data=subset(harvestRel, species=='LUPE'), variable='total_biomass_rel', byFactorNames=c('LUPE_trt2', 'CO2_trt', 'N_trt')), aes(x=LUPE_trt2, y=mean, fill=interaction(CO2_trt, N_trt))) +
   geom_bar(stat='identity', position=position_dodge()) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se), position=position_dodge(.9), width=0.2) +
   xlab('') + ylab('') +
-  scale_x_discrete(limits=c('Other Legume in Monoculture', 'Other Legume in Polyculture', 'Self in Monoculture', 'Self in Polyculture', 'All Legume Polyculture', '16 Species Polyculture')) #+
-#   coord_cartesian(ylim=c(-0.25, 1.5)) +
-#   annotate('text', x=0.5, y=1.4, label='(b) LUPE Biomass', size=9, hjust=0)
+  scale_x_discrete(limits=c('Other Legume in Monoculture', 'Other Legume in Polyculture', 'Self in Monoculture', 'Self in Polyculture', 'All Legume Polyculture', '16 Species Polyculture')) +
+  coord_cartesian(ylim=c(-0.25, 1.5)) +
+  annotate('text', x=0.5, y=1.4, label='(b) LUPE Biomass', size=9, hjust=0) +
+  theme(axis.text.x=element_text(angle=45, hjust=1))
 
-feedbackLECAnod <- ggplot(barGraphStats(data=subset(harvestRel, species=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich'), variable='total_nod', byFactorNames=c('LECA_trt2')), aes(x=LECA_trt2, y=mean)) +
+feedbackLECAnod <- ggplot(barGraphStats(data=subset(harvestRel, species=='LECA'), variable='total_nod', byFactorNames=c('LECA_trt2', 'CO2_trt', 'N_trt')), aes(x=LECA_trt2, y=mean, fill=interaction(CO2_trt, N_trt))) +
   geom_bar(stat='identity', position=position_dodge()) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se), position=position_dodge(.9), width=0.2) +
   xlab('Soil Origin') + ylab('Nodule Number') +
   scale_x_discrete(limits=c('Other Legume in Monoculture', 'Other Legume in Polyculture', 'Self in Monoculture', 'Self in Polyculture', 'All Legume Polyculture', '16 Species Polyculture')) +
   coord_cartesian(ylim=c(0,10)) +
-  annotate('text', x=0.5, y=9.5, label='(c) LECA Nodules', size=9, hjust=0)
+  annotate('text', x=0.5, y=9.5, label='(c) LECA Nodules', size=9, hjust=0) +
+  theme(axis.text.x=element_text(angle=45, hjust=1))
 
-feedbackLUPEnod <- ggplot(barGraphStats(data=subset(harvestRel, species=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich'), variable='total_nod', byFactorNames=c('LUPE_trt2')), aes(x=LUPE_trt2, y=mean)) +
+feedbackLUPEnod <- ggplot(barGraphStats(data=subset(harvestRel, species=='LUPE'), variable='total_nod', byFactorNames=c('LUPE_trt2', 'CO2_trt', 'N_trt')), aes(x=LUPE_trt2, y=mean, fill=interaction(CO2_trt, N_trt))) +
   geom_bar(stat='identity', position=position_dodge()) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se), position=position_dodge(.9), width=0.2) +
   xlab('Soil Origin') + ylab('') +
   scale_x_discrete(limits=c('Other Legume in Monoculture', 'Other Legume in Polyculture', 'Self in Monoculture', 'Self in Polyculture', 'All Legume Polyculture', '16 Species Polyculture')) +
   coord_cartesian(ylim=c(0,10)) +
-  annotate('text', x=0.5, y=9.5, label='(d) LUPE Nodules', size=9, hjust=0)
+  annotate('text', x=0.5, y=9.5, label='(d) LUPE Nodules', size=9, hjust=0) +
+  theme(axis.text.x=element_text(angle=45, hjust=1))
 
 pushViewport(viewport(layout=grid.layout(2,2)))
 print(feedbackLECAbio, vp=viewport(layout.pos.row = 1, layout.pos.col = 1))
@@ -238,15 +307,13 @@ print(feedbackLECAnod, vp=viewport(layout.pos.row = 2, layout.pos.col = 1))
 print(feedbackLUPEnod, vp=viewport(layout.pos.row = 2, layout.pos.col = 2))
 
 
-###quick ANOVA for CO2 and N trts
-summary(response <- lmer(shoot_mass ~ CO2_trt + N_trt + CO2_trt*N_trt + species + species*CO2_trt + species*N_trt + species*CO2_trt*N_trt + (1|ring), data=harvestRel))
-
-
-
-
-
-
-
+ggplot(barGraphStats(data=subset(harvestRel, species=='LUPE' & LUPE_trt2!='Other Legume in Monoculture' & LUPE_trt2!='Other Legume in Polyculture' & LUPE_trt2!='Self in Polyculture' & LUPE_trt2!='All Legume Polyculture'), variable='total_nod', byFactorNames=c('LUPE_trt2', 'CO2_trt', 'N_trt')), aes(x=LUPE_trt2, y=mean)) +
+  geom_bar(stat='identity', position=position_dodge()) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), position=position_dodge(.9), width=0.2) +
+  xlab('Soil Origin') + ylab('') +
+  scale_x_discrete(labels=c('Self in Monoculture'='Grown Alone', '16 Species Polyculture'='All Legumes'), limits=c('Self in Monoculture', '16 Species Polyculture')) +
+  coord_cartesian(ylim=c(0,10)) +
+  annotate('text', x=0.5, y=9.5, label='(b) LUPE Nodules', size=9, hjust=0)
 
 
 
