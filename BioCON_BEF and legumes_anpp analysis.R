@@ -6,14 +6,41 @@ library(nlme)
 library(lsmeans)
 library(lavaan)
 
-source('C:\\Users\\Kim\\Desktop\\general R code\\general-R-code\\bar graph summary stats.r', chdir=T)
-source('C:\\Users\\Kim\\Desktop\\general R code\\general-R-code\\ggplot_theme set.r', chdir=T)
-source('C:\\Users\\Kim\\Desktop\\BioCON rhizobia\\BioCON data\\BioCON-rhizobia\\BioCON_treatment data.r', chdir=T)
-source('C:\\Users\\Kim\\Desktop\\BioCON rhizobia\\BioCON data\\BioCON-rhizobia\\BioCON_climate data.r', chdir=T)
-source('C:\\Users\\Kim\\Desktop\\BioCON rhizobia\\BioCON data\\BioCON-rhizobia\\BioCON_anpp data.r', chdir=T)
-source('C:\\Users\\Kim\\Desktop\\BioCON rhizobia\\BioCON data\\BioCON-rhizobia\\BioCON_cover data.r', chdir=T)
 
-setwd('C:\\Users\\Kim\\Desktop\\BioCON rhizobia\\BioCON data')
+setwd('C:\\Users\\Kim\\Dropbox\\2015_NSF_LaPierre\\data')
+
+source('BioCON-rhizobia\\BioCON_treatment data.R', chdir = T)
+source('BioCON-rhizobia\\BioCON_climate data.R', chdir = T)
+source('BioCON-rhizobia\\BioCON_anpp data.R', chdir = T)
+source('BioCON-rhizobia\\BioCON_cover data.R', chdir = T)
+
+#ggplot theme set
+theme_set(theme_bw())
+theme_update(axis.title.x=element_text(size=20, vjust=-0.35, margin=margin(t=15)), axis.text.x=element_text(size=16),
+             axis.title.y=element_text(size=20, angle=90, vjust=0.5, margin=margin(r=15)), axis.text.y=element_text(size=16),
+             plot.title = element_text(size=24, vjust=2),
+             panel.grid.major=element_blank(), panel.grid.minor=element_blank(),
+             legend.title=element_blank(), legend.text=element_text(size=20))
+
+###bar graph summary statistics function
+#barGraphStats(data=, variable="", byFactorNames=c(""))
+barGraphStats <- function(data, variable, byFactorNames) {
+  count <- length(byFactorNames)
+  N <- aggregate(data[[variable]], data[byFactorNames], FUN=length)
+  names(N)[1:count] <- byFactorNames
+  names(N) <- sub("^x$", "N", names(N))
+  mean <- aggregate(data[[variable]], data[byFactorNames], FUN=mean)
+  names(mean)[1:count] <- byFactorNames
+  names(mean) <- sub("^x$", "mean", names(mean))
+  sd <- aggregate(data[[variable]], data[byFactorNames], FUN=sd)
+  names(sd)[1:count] <- byFactorNames
+  names(sd) <- sub("^x$", "sd", names(sd))
+  preSummaryStats <- merge(N, mean, by=byFactorNames)
+  finalSummaryStats <- merge(preSummaryStats, sd, by=byFactorNames)
+  finalSummaryStats$se <- finalSummaryStats$sd / sqrt(finalSummaryStats$N)
+  return(finalSummaryStats)
+}  
+
 
 #merge ANPP and climate data
 anppClimate <- merge(anppRY, climate)
@@ -53,15 +80,16 @@ legsppnumANOVA <- aov(logRYT ~ leg_num_spp, data=subset(anppClimate, spp_count==
 summary(legsppnumANOVA)
 lsmeans(legsppnumANOVA, cld~leg_num_spp)
 
-ggplot(barGraphStats(data=subset(anppClimate, spp_count==4 & trt=='Camb_Namb'), variable='logRYT', byFactorNames=c('order')), aes(x=order, y=mean)) +
+ggplot(barGraphStats(data=subset(anppClimate, spp_count==4 & trt=='Camb_Namb' & order!='2 legumes' & order!='3 legumes'), variable='logRYT', byFactorNames=c('order')), aes(x=order, y=mean)) +
   geom_bar(stat='identity', fill='white', colour='black') +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se, width=0.2)) +
   ylab('log Relative Yield Total') +
   theme(axis.title.x=element_blank()) +
-  annotate('text', x=c(1,2,5,8), y=c(0.14,0.14,0.08,0.17), label='a', size=8) +
-  annotate('text', x=c(3,4,6), y=c(0.33,0.36,0.39), label='b', size=8) +
-  annotate('text', x=7, y=0.3, label='ab', size=8) +
-  coord_cartesian(ylim=c(0,0.45))
+  annotate('text', x=c(1,2,5,6), y=c(0.14,0.14,0.08,0.17), label='a', size=8) +
+  annotate('text', x=c(3,4), y=c(0.33,0.36), label='b', size=8) +
+  scale_y_continuous(expand=c(0,0)) +
+  scale_x_discrete(labels=c('none', 'AMCA', 'LECA', 'LUPE', 'PEVI', 'all 4')) +
+  coord_cartesian(ylim=c(0,0.4))
 
 
 #mixed model

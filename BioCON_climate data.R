@@ -1,4 +1,4 @@
-setwd('C:\\Users\\Kim\\Desktop\\BioCON rhizobia\\BioCON data')
+setwd('C:\\Users\\Kim\\Dropbox\\2015_NSF_LaPierre\\data\\BioCON data')
 
 #climate data
 climate <- read.csv('e080_Daily climate summary.csv')

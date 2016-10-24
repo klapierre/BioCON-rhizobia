@@ -1,4 +1,4 @@
-setwd('C:\\Users\\Kim\\Desktop\\BioCON rhizobia\\BioCON data')
+setwd('C:\\Users\\Kim\\Dropbox\\2015_NSF_LaPierre\\data\\BioCON data')
 
 #treatment data
 trt <- read.csv('e141_treatments.csv')
