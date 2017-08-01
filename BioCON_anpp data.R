@@ -1,9 +1,9 @@
 library(plyr)
 library(reshape2)
 
-setwd('C:\\Users\\Kim\\Dropbox\\2015_NSF_LaPierre\\data\\BioCON data')
+setwd('C:\\Users\\Kim\\Dropbox\\NSF BioCON rhizobia\\data\\BioCON data')
 
-source('C:\\Users\\Kim\\Dropbox\\2015_NSF_LaPierre\\data\\BioCON-rhizobia\\BioCON_treatment data.r', chdir=T)
+source('C:\\Users\\Kim\\Desktop\\R files - laptop\\\\BioCON-rhizobia\\BioCON_treatment data.r', chdir=T)
 
 #ANPP data from 1998-2012 (from web; IMPORTANT: be careful that extra spaces are removed from after species names if data is newly downloaded from web)
 anppInitial <- read.csv('e141_plant aboveground biomass_1998-2012.csv')
