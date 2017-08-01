@@ -1,4 +1,5 @@
 library(plyr)
+library(tidyverse)
 library(ggplot2)
 library(reshape2)
 library(grid)
@@ -7,12 +8,12 @@ library(lsmeans)
 library(lavaan)
 
 
-setwd('C:\\Users\\Kim\\Dropbox\\2015_NSF_LaPierre\\data')
+setwd('C:\\Users\\Kim\\Dropbox\\NSF BioCON rhizobia\\data\\BioCON data')
 
-source('BioCON-rhizobia\\BioCON_treatment data.R', chdir = T)
-source('BioCON-rhizobia\\BioCON_climate data.R', chdir = T)
-source('BioCON-rhizobia\\BioCON_anpp data.R', chdir = T)
-source('BioCON-rhizobia\\BioCON_cover data.R', chdir = T)
+source('C:\\Users\\Kim\\Desktop\\R files - laptop\\BioCON-rhizobia\\BioCON_treatment data.R', chdir = T)
+source('C:\\Users\\Kim\\Desktop\\R files - laptop\\BioCON-rhizobia\\BioCON_climate data.R', chdir = T)
+source('C:\\Users\\Kim\\Desktop\\R files - laptop\\BioCON-rhizobia\\BioCON_anpp data.R', chdir = T)
+source('C:\\Users\\Kim\\Desktop\\R files - laptop\\BioCON-rhizobia\\BioCON_cover data.R', chdir = T)
 
 #ggplot theme set
 theme_set(theme_bw())
