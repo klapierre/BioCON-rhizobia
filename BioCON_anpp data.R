@@ -1,9 +1,40 @@
 library(plyr)
 library(reshape2)
+library(boot)
+library(tidyverse)
 
 setwd('C:\\Users\\Kim\\Dropbox\\NSF BioCON rhizobia\\data\\BioCON data')
 
 source('C:\\Users\\Kim\\Desktop\\R files - laptop\\\\BioCON-rhizobia\\BioCON_treatment data.r', chdir=T)
+
+###bar graph summary statistics function
+#barGraphStats(data=, variable="", byFactorNames=c(""))
+
+barGraphStats <- function(data, variable, byFactorNames) {
+  count <- length(byFactorNames)
+  N <- aggregate(data[[variable]], data[byFactorNames], FUN=length)
+  names(N)[1:count] <- byFactorNames
+  names(N) <- sub("^x$", "N", names(N))
+  mean <- aggregate(data[[variable]], data[byFactorNames], FUN=mean)
+  names(mean)[1:count] <- byFactorNames
+  names(mean) <- sub("^x$", "mean", names(mean))
+  sd <- aggregate(data[[variable]], data[byFactorNames], FUN=sd)
+  names(sd)[1:count] <- byFactorNames
+  names(sd) <- sub("^x$", "sd", names(sd))
+  preSummaryStats <- merge(N, mean, by=byFactorNames)
+  finalSummaryStats <- merge(preSummaryStats, sd, by=byFactorNames)
+  finalSummaryStats$se <- finalSummaryStats$sd / sqrt(finalSummaryStats$N)
+  return(finalSummaryStats)
+}  
+
+theme_set(theme_bw())
+theme_update(axis.title.x=element_text(size=20, vjust=-0.35), axis.text.x=element_text(size=16),
+             axis.title.y=element_text(size=20, angle=90, vjust=0.5), axis.text.y=element_text(size=16),
+             plot.title = element_text(size=24, vjust=2),
+             panel.grid.major=element_blank(), panel.grid.minor=element_blank(),
+             legend.title=element_blank(), legend.text=element_text(size=20))
+
+
 
 #ANPP data from 1998-2012 (from web; IMPORTANT: be careful that extra spaces are removed from after species names if data is newly downloaded from web)
 anppInitial <- read.csv('e141_plant aboveground biomass_1998-2012.csv')
@@ -151,6 +182,173 @@ names(anppSum)[names(anppSum)=="x"] <- "total_biomass"
 #merge monoculture averages with polyculture data
 anppRY <- merge(anppSum, anppMonoAvgWide, all=T)
 
+
+###aside to get RY for ESA 2017 talk
+#calculate RY for years that biomass was sorted to species; **this is for monoculture yield compared to polyculture yield**
+#only do 2005, as this is last year before biomass not sorted to species
+anppRY05 <- anppRY%>%
+  filter(year==2005, monogroup=='Legume')%>%
+  left_join(anpp)%>%
+  mutate(AMCA_RY=AMCA/(0.25*AMCAmono), LECA_RY=LECA/(0.25*LECAmono), LUPE_RY=LUPE/(0.25*LUPEmono), PEVI_RY=PEVI/(0.25*PEVImono))%>%
+  select(year, CO2_trt, N_trt, trt, plot, ring, AMCA_RY, LECA_RY, LUPE_RY, PEVI_RY)%>%
+  gather(key=spp, value=RY, AMCA_RY:PEVI_RY)
+
+#boostrap RY values
+RYfunction <- function(d, i){
+  d2 <- d[i,]
+  return(d2$RY)
+}
+
+#AMCA
+amcaBio <- subset(anppRY05, subset=(spp=='AMCA_RY' & trt=='Camb_Namb'))
+amcaRYBootModel <- boot(amcaBio, RYfunction, R=1000)
+plot(amcaRYBootModel)
+amcaRYBoot <- as.data.frame(amcaRYBootModel$t)
+amcaRYBootMean <- as.data.frame(rowMeans(amcaRYBoot[1:1000,]))%>%
+  mutate(spp='AMCA')
+names(amcaRYBootMean)[names(amcaRYBootMean) == 'rowMeans(amcaRYBoot[1:1000, ])'] <- 'RY'
+
+#LECA
+lecaBio <- subset(anppRY05, subset=(spp=='LECA_RY' & trt=='Camb_Namb'))
+lecaRYBootModel <- boot(lecaBio, RYfunction, R=1000)
+plot(lecaRYBootModel)
+lecaRYBoot <- as.data.frame(lecaRYBootModel$t)
+lecaRYBootMean <- as.data.frame(rowMeans(lecaRYBoot[1:1000,]))%>%
+  mutate(spp='LECA')
+names(lecaRYBootMean)[names(lecaRYBootMean) == 'rowMeans(lecaRYBoot[1:1000, ])'] <- 'RY'
+
+#LUPE
+lupeBio <- subset(anppRY05, subset=(spp=='LUPE_RY' & trt=='Camb_Namb'))
+lupeRYBootModel <- boot(lupeBio, RYfunction, R=1000)
+plot(lupeRYBootModel)
+lupeRYBoot <- as.data.frame(lupeRYBootModel$t)
+lupeRYBootMean <- as.data.frame(rowMeans(lupeRYBoot[1:1000,]))%>%
+  mutate(spp='LUPE')
+names(lupeRYBootMean)[names(lupeRYBootMean) == 'rowMeans(lupeRYBoot[1:1000, ])'] <- 'RY'
+
+#combine spp specializations
+allSpecializationBoot <- rbind(amcaRYBootMean, lecaRYBootMean, lupeRYBootMean)%>%
+  group_by(spp)%>%
+  summarize(RY_mean=mean(RY), RY_sd=sd(RY))%>%
+  ungroup()%>%
+  mutate(RY_CI=1.96*RY_sd)
+
+#plot rhizobial specialization
+ggplot(data=allSpecializationBoot, aes(x=spp, y=RY_mean, fill=spp)) +
+  geom_bar(stat='identity') +
+  geom_errorbar(aes(ymin=RY_mean-RY_CI, ymax=RY_mean+RY_CI), width=0.2) +
+  geom_hline(aes(yintercept=1), linetype="dashed") +
+  xlab('Legume Species') +
+  ylab('Relative Yield in Field') +
+  annotate('text', x=1, y=0.7, label='a', size=10) +
+  annotate('text', x=2, y=0.6, label='a', size=10) +
+  annotate('text', x=3, y=3, label='b', size=10) +
+  scale_fill_manual(values=c('#00760a', '#00760a', '#e46c0a'), breaks=c('AMCA', 'LUPE'), labels=c('specialist', 'generalist'))
+#export at 700x500
+
+
+
+#with eCO2
+#AMCA
+amcaBio <- subset(anppRY05, subset=(spp=='AMCA_RY' & trt=='Cenrich_Namb'))
+amcaRYBootModel <- boot(amcaBio, RYfunction, R=1000)
+plot(amcaRYBootModel)
+amcaRYBoot <- as.data.frame(amcaRYBootModel$t)
+amcaRYBootMean <- as.data.frame(rowMeans(amcaRYBoot[1:1000,]))%>%
+  mutate(spp='AMCA')
+names(amcaRYBootMean)[names(amcaRYBootMean) == 'rowMeans(amcaRYBoot[1:1000, ])'] <- 'RY'
+
+#LECA
+lecaBio <- subset(anppRY05, subset=(spp=='LECA_RY' & trt=='Cenrich_Namb'))
+lecaRYBootModel <- boot(lecaBio, RYfunction, R=1000)
+plot(lecaRYBootModel)
+lecaRYBoot <- as.data.frame(lecaRYBootModel$t)
+lecaRYBootMean <- as.data.frame(rowMeans(lecaRYBoot[1:1000,]))%>%
+  mutate(spp='LECA')
+names(lecaRYBootMean)[names(lecaRYBootMean) == 'rowMeans(lecaRYBoot[1:1000, ])'] <- 'RY'
+
+#LUPE
+lupeBio <- subset(anppRY05, subset=(spp=='LUPE_RY' & trt=='Cenrich_Namb'))
+lupeRYBootModel <- boot(lupeBio, RYfunction, R=1000)
+plot(lupeRYBootModel)
+lupeRYBoot <- as.data.frame(lupeRYBootModel$t)
+lupeRYBootMean <- as.data.frame(rowMeans(lupeRYBoot[1:1000,]))%>%
+  mutate(spp='LUPE')
+names(lupeRYBootMean)[names(lupeRYBootMean) == 'rowMeans(lupeRYBoot[1:1000, ])'] <- 'RY'
+
+#combine spp specializations
+allSpecializationBoot <- rbind(amcaRYBootMean, lecaRYBootMean, lupeRYBootMean)%>%
+  group_by(spp)%>%
+  summarize(RY_mean=mean(RY), RY_sd=sd(RY))%>%
+  ungroup()%>%
+  mutate(RY_CI=1.96*RY_sd)
+
+#plot rhizobial specialization
+ggplot(data=allSpecializationBoot, aes(x=spp, y=RY_mean, fill=spp)) +
+  geom_bar(stat='identity') +
+  geom_errorbar(aes(ymin=RY_mean-RY_CI, ymax=RY_mean+RY_CI), width=0.2) +
+  geom_hline(aes(yintercept=1), linetype="dashed") +
+  xlab('Legume Species') +
+  ylab('Relative Yield in Field') +
+  annotate('text', x=1, y=0.7, label='a', size=10) +
+  annotate('text', x=2, y=3.5, label='ab', size=10) +
+  annotate('text', x=3, y=3.6, label='b', size=10) +
+  scale_fill_manual(values=c('#00760a', '#00760a', '#e46c0a'), breaks=c('AMCA', 'LUPE'), labels=c('specialist', 'generalist'))
+#export at 700x500
+
+
+##with eN
+#AMCA
+amcaBio <- subset(anppRY05, subset=(spp=='AMCA_RY' & trt=='Camb_Nenrich'))
+amcaRYBootModel <- boot(amcaBio, RYfunction, R=1000)
+plot(amcaRYBootModel)
+amcaRYBoot <- as.data.frame(amcaRYBootModel$t)
+amcaRYBootMean <- as.data.frame(rowMeans(amcaRYBoot[1:1000,]))%>%
+  mutate(spp='AMCA')
+names(amcaRYBootMean)[names(amcaRYBootMean) == 'rowMeans(amcaRYBoot[1:1000, ])'] <- 'RY'
+
+#LECA
+lecaBio <- subset(anppRY05, subset=(spp=='LECA_RY' & trt=='Camb_Nenrich'))
+lecaRYBootModel <- boot(lecaBio, RYfunction, R=1000)
+plot(lecaRYBootModel)
+lecaRYBoot <- as.data.frame(lecaRYBootModel$t)
+lecaRYBootMean <- as.data.frame(rowMeans(lecaRYBoot[1:1000,]))%>%
+  mutate(spp='LECA')
+names(lecaRYBootMean)[names(lecaRYBootMean) == 'rowMeans(lecaRYBoot[1:1000, ])'] <- 'RY'
+
+#LUPE
+lupeBio <- subset(anppRY05, subset=(spp=='LUPE_RY' & trt=='Camb_Nenrich'))
+lupeRYBootModel <- boot(lupeBio, RYfunction, R=1000)
+plot(lupeRYBootModel)
+lupeRYBoot <- as.data.frame(lupeRYBootModel$t)
+lupeRYBootMean <- as.data.frame(rowMeans(lupeRYBoot[1:1000,]))%>%
+  mutate(spp='LUPE')
+names(lupeRYBootMean)[names(lupeRYBootMean) == 'rowMeans(lupeRYBoot[1:1000, ])'] <- 'RY'
+
+#combine spp specializations
+allSpecializationBoot <- rbind(amcaRYBootMean, lecaRYBootMean, lupeRYBootMean)%>%
+  group_by(spp)%>%
+  summarize(RY_mean=mean(RY), RY_sd=sd(RY))%>%
+  ungroup()%>%
+  mutate(RY_CI=1.96*RY_sd)
+
+#plot rhizobial specialization
+ggplot(data=allSpecializationBoot, aes(x=spp, y=RY_mean, fill=spp)) +
+  geom_bar(stat='identity') +
+  geom_errorbar(aes(ymin=RY_mean-RY_CI, ymax=RY_mean+RY_CI), width=0.2) +
+  geom_hline(aes(yintercept=1), linetype="dashed") +
+  xlab('Legume Species') +
+  ylab('Relative Yield in Field') +
+  annotate('text', x=1, y=0.8, label='a', size=10) +
+  annotate('text', x=2, y=1.3, label='a', size=10) +
+  annotate('text', x=3, y=8.4, label='b', size=10) +
+  scale_fill_manual(values=c('#00760a', '#00760a', '#e46c0a'), breaks=c('AMCA', 'LUPE'), labels=c('specialist', 'generalist'))
+#export at 700x500
+
+
+
+
+###continues
 #calculate expected yield from monoculture biomass
 anppRY$ACMImono2 <- with(anppRY, ifelse(Achillea.millefolium==1, ACMImono, 0))
 anppRY$AGREmono2 <- with(anppRY, ifelse(Agropyron.repens==1, AGREmono, 0))
@@ -324,6 +522,70 @@ anppHedgesDSppci$trt2 <- with(anppHedgesDSppci, ifelse(trt=='hedgesd_ci_CO2', 'h
 anppHedgesDSppci$trt <- NULL
 names(anppHedgesDSppci)[names(anppHedgesDSppci)=='trt2'] <- 'trt'
 anppHedgesDSpp <- merge(anppHedgesDSppd, anppHedgesDSppci)
+
+
+
+
+
+
+
+#boostrap RY values
+RYfunction <- function(d, i){
+  d2 <- d[i,]
+  return(d2$RY)
+}
+
+#AMCA
+amcaBio <- subset(anppRY05, subset=(spp=='AMCA_RY'))
+amcaRYBootModel <- boot(amcaBio, RYfunction, R=1000)
+plot(amcaRYBootModel)
+amcaRYBoot <- as.data.frame(amcaRYBootModel$t)
+amcaRYBootMean <- as.data.frame(rowMeans(amcaRYBoot[1:1000,]))%>%
+  mutate(spp='AMCA')
+names(amcaRYBootMean)[names(amcaRYBootMean) == 'rowMeans(amcaRYBoot[1:1000, ])'] <- 'RY'
+
+#LECA
+lecaBio <- subset(anppRY05, subset=(spp=='LECA_RY'))
+lecaRYBootModel <- boot(lecaBio, RYfunction, R=1000)
+plot(lecaRYBootModel)
+lecaRYBoot <- as.data.frame(lecaRYBootModel$t)
+lecaRYBootMean <- as.data.frame(rowMeans(lecaRYBoot[1:1000,]))%>%
+  mutate(spp='LECA')
+names(lecaRYBootMean)[names(lecaRYBootMean) == 'rowMeans(lecaRYBoot[1:1000, ])'] <- 'RY'
+
+#LUPE
+lupeBio <- subset(anppRY05, subset=(spp=='LUPE_RY'))
+lupeRYBootModel <- boot(lupeBio, RYfunction, R=1000)
+plot(lupeRYBootModel)
+lupeRYBoot <- as.data.frame(lupeRYBootModel$t)
+lupeRYBootMean <- as.data.frame(rowMeans(lupeRYBoot[1:1000,]))%>%
+  mutate(spp='LUPE')
+names(lupeRYBootMean)[names(lupeRYBootMean) == 'rowMeans(lupeRYBoot[1:1000, ])'] <- 'RY'
+
+#combine spp specializations
+allSpecializationBoot <- rbind(amcaRYBootMean, lecaRYBootMean, lupeRYBootMean)%>%
+  group_by(spp)%>%
+  summarize(RY_mean=mean(RY), RY_sd=sd(RY))%>%
+  ungroup()%>%
+  mutate(RY_CI=1.96*RY_sd)
+
+#plot rhizobial specialization
+ggplot(data=allSpecializationBoot, aes(x=spp, y=RY_mean, fill=spp)) +
+  geom_bar(stat='identity') +
+  geom_errorbar(aes(ymin=RY_mean-RY_CI, ymax=RY_mean+RY_CI), width=0.2) +
+  geom_hline(aes(yintercept=1), linetype="dashed") +
+  xlab('Legume Species') +
+  ylab('Relative Yield in Field') +
+  annotate('text', x=1, y=0.6, label='a', size=10) +
+  annotate('text', x=2, y=1.2, label='a', size=10) +
+  annotate('text', x=3, y=4.7, label='b', size=10) +
+  scale_fill_manual(values=c('#00760a', '#00760a', '#e46c0a'), breaks=c('AMCA', 'LUPE'), labels=c('specialist', 'generalist'))
+#export at 700x500
+
+
+
+
+
 
 
 ##############################################

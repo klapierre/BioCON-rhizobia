@@ -103,7 +103,9 @@ harvestTrt <- merge(harvestAll, plan, by=c('pot'), all=T)%>%
   #remove plants that never grew
   filter(num_plants>0)%>%
   #calcualte mass and nodules per plant (many pots had more than one plant in them)
-  mutate(mass_total_ind=mass_total/num_plants, total_nod_ind=total_nod/num_plants)
+  mutate(mass_total_ind=mass_total/num_plants, total_nod_ind=total_nod/num_plants, func_nod_ind=f_nodules/num_plants)%>%
+  #remove outliers until they can be checked
+  filter(pot!=200004060 & pot!=200003217 & pot!=200001213 & pot!=200003064 & pot!=200003072 & pot!=200003018)
 
 harvestTrt$LECA_trt2 <- as.factor(with(harvestTrt, ifelse(LECA_trt=='0::1' & spp_count==1, 'Other Legume in Monoculture', ifelse(LECA_trt=='0::1' & spp_count==4, 'Other Legume in Polyculture', ifelse(LECA_trt=='1::1' & spp_count==1, 'Self in Monoculture', ifelse(LECA_trt=='1::1' & spp_count==4, 'Self in Polyculture', ifelse(LECA_trt=='1::4' & spp_count==4, 'All Legume Polyculture', ifelse(spp_count==16, '16 Species Polyculture', 'NA'))))))))
 
@@ -247,7 +249,7 @@ print(feedbackAMCAbio, vp=viewport(layout.pos.row = 1, layout.pos.col = 3))
 
 
 #nodule response (per individual plant in a pot), not averaged across replicate pots
-feedbackLECAnod <- ggplot(barGraphStats(data=subset(harvestTrt, spp=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich' & total_nod!='is.na' & ring!='is.na'), variable='total_nod_ind', byFactorNames=c('LECA_trt2')), aes(x=LECA_trt2, y=mean)) +
+feedbackLECAnod <- ggplot(barGraphStats(data=subset(harvestTrt, spp=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich' & total_nod!='is.na' & ring!='is.na'), variable='func_nod_ind', byFactorNames=c('LECA_trt2')), aes(x=LECA_trt2, y=mean)) +
   geom_bar(stat='identity', position=position_dodge()) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se), position=position_dodge(.9), width=0.2) +
   xlab('Soil Origin') + ylab('Nodule Number') +
@@ -256,7 +258,7 @@ feedbackLECAnod <- ggplot(barGraphStats(data=subset(harvestTrt, spp=='LECA' & CO
   theme(axis.text.x=element_text(angle=45, hjust=1)) + 
   annotate('text', x=0.5, y=12, label='(a) LECA Nodules', size=9, hjust=0)
 
-feedbackLUPEnod <- ggplot(barGraphStats(data=subset(harvestTrt, spp=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich' & total_nod!='is.na' & ring!='is.na'), variable='total_nod_ind', byFactorNames=c('LUPE_trt2')), aes(x=LUPE_trt2, y=mean)) +
+feedbackLUPEnod <- ggplot(barGraphStats(data=subset(harvestTrt, spp=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich' & total_nod!='is.na' & ring!='is.na'), variable='func_nod_ind', byFactorNames=c('LUPE_trt2')), aes(x=LUPE_trt2, y=mean)) +
   geom_bar(stat='identity', position=position_dodge()) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se), position=position_dodge(.9), width=0.2) +
   xlab('Soil Origin') + ylab('') +
@@ -265,7 +267,7 @@ feedbackLUPEnod <- ggplot(barGraphStats(data=subset(harvestTrt, spp=='LUPE' & CO
   theme(axis.text.x=element_text(angle=45, hjust=1)) + 
   annotate('text', x=0.5, y=12, label='(b) LUPE Nodules', size=9, hjust=0)
 
-feedbackAMCAnod <- ggplot(barGraphStats(data=subset(harvestTrt, spp=='AMCA' & CO2_trt!='Cenrich' & N_trt!='Nenrich' & ring!='is.na'), variable='total_nod_ind', byFactorNames=c('AMCA_trt2')), aes(x=AMCA_trt2, y=mean)) +
+feedbackAMCAnod <- ggplot(barGraphStats(data=subset(harvestTrt, spp=='AMCA' & CO2_trt!='Cenrich' & N_trt!='Nenrich' & ring!='is.na'), variable='func_nod_ind', byFactorNames=c('AMCA_trt2')), aes(x=AMCA_trt2, y=mean)) +
   geom_bar(stat='identity', position=position_dodge()) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se), position=position_dodge(.9), width=0.2) +
   xlab('Soil Origin') + ylab('') +
@@ -357,11 +359,11 @@ rhizSpecializationSelfFunction <- function(d, i){
 lecaNods <- subset(harvestTrt, subset=(spp=='LECA'))%>%
   filter(LECA_trt2=='Self in Polyculture'|LECA_trt2=='Other Legume in Polyculture')%>%
   mutate(LECA_trt3=ifelse(LECA_trt2=='Self in Polyculture', 'self', 'other'))%>%
-  filter(CO2_trt=='Camb'&N_trt=='Namb'&total_nod_ind!='is.na')%>%
-  select(ring, plot, pot, total_nod_ind, LECA_trt3)%>%
+  filter(CO2_trt=='Camb'&N_trt=='Namb'&func_nod_ind!='is.na')%>%
+  select(ring, plot, pot, func_nod_ind, LECA_trt3)%>%
   #remove duplicate row - FIX THIS
   group_by(ring, plot, pot, LECA_trt3)%>%
-  summarise(total_nod_ind2=mean(total_nod_ind))%>%
+  summarise(total_nod_ind2=mean(func_nod_ind))%>%
   ungroup()
 
 lecaSelfNods <- subset(lecaNods, subset=(LECA_trt3=='self'))%>%
@@ -390,11 +392,11 @@ lecaSpecializationBoot <- cbind(lecaNodsSelfBootMean, lecaNodsOtherBootMean)%>%
 lupeNods <- subset(harvestTrt, subset=(spp=='LUPE'))%>%
   filter(LUPE_trt2=='Self in Polyculture'|LUPE_trt2=='Other Legume in Polyculture')%>%
   mutate(LUPE_trt3=ifelse(LUPE_trt2=='Self in Polyculture', 'self', 'other'))%>%
-  filter(CO2_trt=='Camb'&N_trt=='Namb'&total_nod_ind!='is.na')%>%
-  select(ring, plot, pot, total_nod_ind, LUPE_trt3)%>%
+  filter(CO2_trt=='Camb'&N_trt=='Namb'&func_nod_ind!='is.na')%>%
+  select(ring, plot, pot, func_nod_ind, LUPE_trt3)%>%
   #remove duplicate row - FIX THIS
   group_by(ring, plot, pot, LUPE_trt3)%>%
-  summarise(total_nod_ind2=mean(total_nod_ind))%>%
+  summarise(total_nod_ind2=mean(func_nod_ind))%>%
   ungroup()
 
 lupeSelfNods <- subset(lupeNods, subset=(LUPE_trt3=='self'))%>%
@@ -423,11 +425,11 @@ lupeSpecializationBoot <- cbind(lupeNodsSelfBootMean, lupeNodsOtherBootMean)%>%
 amcaNods <- subset(harvestTrt, subset=(spp=='AMCA'))%>%
   filter(AMCA_trt2=='Self in Polyculture'|AMCA_trt2=='Other Legume in Polyculture')%>%
   mutate(AMCA_trt3=ifelse(AMCA_trt2=='Self in Polyculture', 'self', 'other'))%>%
-  filter(CO2_trt=='Camb'&N_trt=='Namb'&total_nod_ind!='is.na')%>%
-  select(ring, plot, pot, total_nod_ind, AMCA_trt3)%>%
+  filter(CO2_trt=='Camb'&N_trt=='Namb'&func_nod_ind!='is.na')%>%
+  select(ring, plot, pot, func_nod_ind, AMCA_trt3)%>%
   #remove duplicate row - FIX THIS
   group_by(ring, plot, pot, AMCA_trt3)%>%
-  summarise(total_nod_ind2=mean(total_nod_ind))%>%
+  summarise(total_nod_ind2=mean(func_nod_ind))%>%
   ungroup()
 
 amcaSelfNods <- subset(amcaNods, subset=(AMCA_trt3=='self'))%>%
@@ -468,11 +470,11 @@ ggplot(data=allSpecializationBoot, aes(x=spp, y=specialization_mean, fill=spp)) 
   geom_hline(aes(yintercept=1), linetype="dashed") +
   xlab('Legume Species') +
   ylab('Rhizobial Specialization') +
-  annotate('text', x=1, y=0.5, label='a', size=10) +
-  annotate('text', x=2, y=0.4, label='a', size=10) +
-  annotate('text', x=3, y=1.3, label='b', size=10) +
+  annotate('text', x=1, y=0.48, label='a', size=10) +
+  annotate('text', x=2, y=0.35, label='a', size=10) +
+  annotate('text', x=3, y=1.35, label='b', size=10) +
   scale_fill_manual(values=c('#00760a', '#00760a', '#e46c0a'), breaks=c('AMCA', 'LUPE'), labels=c('specialist', 'generalist'))
-
+#export at 700x500
 
 
 
@@ -491,7 +493,7 @@ biomassSelfFunction <- function(d, i){
 
 #LECA
 lecaBio <- subset(harvestTrt, subset=(spp=='LECA'))%>%
-  filter(LECA_trt2=='Self in Polyculture'|LECA_trt2=='Other Legume in Polyculture')%>%
+  filter(LECA_trt2=='Self in Polyculture'|LECA_trt2=='All Legume Polyculture')%>%
   mutate(LECA_trt3=ifelse(LECA_trt2=='Self in Polyculture', 'self', 'other'))%>%
   filter(CO2_trt=='Camb'&N_trt=='Namb'&mass_total_ind!='is.na')%>%
   select(ring, plot, pot, mass_total_ind, LECA_trt3)%>%
@@ -524,7 +526,7 @@ lecaSpecializationBoot <- cbind(lecaMassSelfBootMean, lecaMassOtherBootMean)%>%
 
 #LUPE
 lupeBio <- subset(harvestTrt, subset=(spp=='LUPE'))%>%
-  filter(LUPE_trt2=='Self in Polyculture'|LUPE_trt2=='Other Legume in Polyculture')%>%
+  filter(LUPE_trt2=='Self in Polyculture'|LUPE_trt2=='All Legume Polyculture')%>%
   mutate(LUPE_trt3=ifelse(LUPE_trt2=='Self in Polyculture', 'self', 'other'))%>%
   filter(CO2_trt=='Camb'&N_trt=='Namb'&mass_total_ind!='is.na')%>%
   select(ring, plot, pot, mass_total_ind, LUPE_trt3)%>%
@@ -557,7 +559,7 @@ lupeSpecializationBoot <- cbind(lupeMassSelfBootMean, lupeMassOtherBootMean)%>%
 
 #AMCA
 amcaBio <- subset(harvestTrt, subset=(spp=='AMCA'))%>%
-  filter(AMCA_trt2=='Self in Polyculture'|AMCA_trt2=='Other Legume in Polyculture')%>%
+  filter(AMCA_trt2=='Self in Polyculture'|AMCA_trt2=='All Legume Polyculture')%>%
   mutate(AMCA_trt3=ifelse(AMCA_trt2=='Self in Polyculture', 'self', 'other'))%>%
   filter(CO2_trt=='Camb'&N_trt=='Namb'&mass_total_ind!='is.na')%>%
   select(ring, plot, pot, mass_total_ind, AMCA_trt3)%>%
@@ -601,12 +603,12 @@ ggplot(data=allSpecializationBoot, aes(x=spp, y=specialization_mean, fill=spp)) 
   geom_errorbar(aes(ymin=specialization_mean-specialization_CI, ymax=specialization_mean+specialization_CI), width=0.2) +
   geom_hline(aes(yintercept=1), linetype="dashed") +
   xlab('Legume Species') +
-  ylab('Rhizobial Specialization') +
-  annotate('text', x=1, y=0.5, label='a', size=10) +
-  annotate('text', x=2, y=0.4, label='a', size=10) +
-  annotate('text', x=3, y=1.3, label='b', size=10) +
+  ylab('Relative Yield in Pots') +
+  # annotate('text', x=1, y=0.5, label='a', size=10) +
+  # annotate('text', x=2, y=0.4, label='a', size=10) +
+  # annotate('text', x=3, y=1.3, label='b', size=10) +
   scale_fill_manual(values=c('#00760a', '#00760a', '#e46c0a'), breaks=c('AMCA', 'LUPE'), labels=c('specialist', 'generalist'))
-
+#export at 700x500
 
 
 
@@ -682,62 +684,62 @@ print(feedbackLUPEbio, vp=viewport(layout.pos.row = 1, layout.pos.col = 2))
 print(feedbackAMCAbio, vp=viewport(layout.pos.row = 1, layout.pos.col = 3))
 print(feedbackLECAnod, vp=viewport(layout.pos.row = 2, layout.pos.col = 1))
 print(feedbackLUPEnod, vp=viewport(layout.pos.row = 2, layout.pos.col = 2))
-print(feedbackAMCAbio, vp=viewport(layout.pos.row = 2, layout.pos.col = 3))
+print(feedbackAMCAnod, vp=viewport(layout.pos.row = 2, layout.pos.col = 3))
 
 
 #nodulation with broad bins of self vs all
-ggplot(barGraphStats(data=subset(harvestRel, spp=='LECA' & LECA_trt2!='Other Legume in Polyculture' & LECA_trt2!='Self in Polyculture' & LECA_trt2!='16 Species Polyculture'), variable='total_nod', byFactorNames=c('LECA_trt2', 'CO2_trt', 'N_trt')), aes(x=LECA_trt2, y=mean, fill=interaction(CO2_trt, N_trt))) +
+ggplot(barGraphStats(data=subset(harvestTrt, spp=='LECA' & LECA_trt2!='Other Legume in Monoculture' & LECA_trt2!='Self in Monoculture' & LECA_trt2!='16 Species Polyculture' & total_nod_ind!='NA'), variable='total_nod_ind', byFactorNames=c('LECA_trt2', 'CO2_trt', 'N_trt')), aes(x=LECA_trt2, y=mean, fill=interaction(CO2_trt, N_trt))) +
   geom_bar(stat='identity', position=position_dodge()) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se), position=position_dodge(.9), width=0.2) +
   xlab('Soil Origin') + ylab('Total Nodules') +
-  scale_x_discrete(labels=c('Other Legume in Monoculture'='Other Legume', 'Self in Monoculture'='Grown Alone', 'All Legume Polyculture'='All Legumes'), limits=c('Other Legume in Monoculture', 'Self in Monoculture', 'All Legume Polyculture')) +
+  scale_x_discrete(labels=c('Other Legume in Polyculture'='Other Legume', 'Self in Polyculture'='Grown Alone', 'All Legume Polyculture'='All Legumes'), limits=c('Other Legume in Polyculture', 'Self in Polyculture', 'All Legume Polyculture')) +
   scale_y_continuous(breaks=seq(0,12,2)) +
   coord_cartesian(ylim=c(0,12)) +
   annotate('text', x=0.5, y=12, label='(a) LECA Nodules', size=9, hjust=0)
 
-ggplot(barGraphStats(data=subset(harvestRel, spp=='LUPE' & LUPE_trt2!='Other Legume in Polyculture' & LUPE_trt2!='Self in Polyculture' & LUPE_trt2!='16 Species Polyculture'), variable='total_nod', byFactorNames=c('LUPE_trt2', 'CO2_trt', 'N_trt')), aes(x=LUPE_trt2, y=mean, fill=interaction(CO2_trt, N_trt))) +
+ggplot(barGraphStats(data=subset(harvestTrt, spp=='LUPE' & LUPE_trt2!='Other Legume in Monoculture' & LUPE_trt2!='Self in Monoculture' & LUPE_trt2!='16 Species Polyculture'), variable='total_nod_ind', byFactorNames=c('LUPE_trt2', 'CO2_trt', 'N_trt')), aes(x=LUPE_trt2, y=mean, fill=interaction(CO2_trt, N_trt))) +
   geom_bar(stat='identity', position=position_dodge()) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se), position=position_dodge(.9), width=0.2) +
   xlab('Soil Origin') + ylab('Total Nodules') +
-  scale_x_discrete(labels=c('Other Legume in Monoculture'='Other Legume', 'Self in Monoculture'='Grown Alone', 'All Legume Polyculture'='All Legumes'), limits=c('Other Legume in Monoculture', 'Self in Monoculture', 'All Legume Polyculture')) +
+  scale_x_discrete(labels=c('Other Legume in Polyculture'='Other Legume', 'Self in Polyculture'='Grown Alone', 'All Legume Polyculture'='All Legumes'), limits=c('Other Legume in Polyculture', 'Self in Polyculture', 'All Legume Polyculture')) +
   scale_y_continuous(breaks=seq(0,12,2)) +
   coord_cartesian(ylim=c(0,12)) +
   annotate('text', x=0.5, y=12, label='(b) LUPE Nodules', size=9, hjust=0)
 
-ggplot(barGraphStats(data=subset(harvestRel, spp=='AMCA' & AMCA_trt2!='Other Legume in Polyculture' & AMCA_trt2!='Self in Polyculture' & AMCA_trt2!='16 Species Polyculture'), variable='total_nod', byFactorNames=c('AMCA_trt2', 'CO2_trt', 'N_trt')), aes(x=AMCA_trt2, y=mean, fill=interaction(CO2_trt, N_trt))) +
+ggplot(barGraphStats(data=subset(harvestTrt, spp=='AMCA' & AMCA_trt2!='Other Legume in Monoculture' & AMCA_trt2!='Self in Monoculture' & AMCA_trt2!='16 Species Polyculture' & total_nod_ind!='NA'), variable='total_nod_ind', byFactorNames=c('AMCA_trt2', 'CO2_trt', 'N_trt')), aes(x=AMCA_trt2, y=mean, fill=interaction(CO2_trt, N_trt))) +
   geom_bar(stat='identity', position=position_dodge()) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se), position=position_dodge(.9), width=0.2) +
   xlab('Soil Origin') + ylab('Total Nodules') +
-  scale_x_discrete(labels=c('Other Legume in Monoculture'='Other Legume', 'Self in Monoculture'='Grown Alone', 'All Legume Polyculture'='All Legumes'), limits=c('Other Legume in Monoculture', 'Self in Monoculture', 'All Legume Polyculture')) +
+  scale_x_discrete(labels=c('Other Legume in Polyculture'='Other Legume', 'Self in Polyculture'='Grown Alone', 'All Legume Polyculture'='All Legumes'), limits=c('Other Legume in Polyculture', 'Self in Polyculture', 'All Legume Polyculture')) +
   scale_y_continuous(breaks=seq(0,12,2)) +
   coord_cartesian(ylim=c(0,12)) +
   annotate('text', x=0.5, y=12, label='(c) AMCA Nodules', size=9, hjust=0)
 
 
 #biomass with broad bins of self vs all
-ggplot(barGraphStats(data=subset(harvestRel, spp=='LECA' & LECA_trt2!='Other Legume in Polyculture' & LECA_trt2!='Self in Polyculture' & LECA_trt2!='16 Species Polyculture'), variable='mass_total', byFactorNames=c('LECA_trt2', 'CO2_trt', 'N_trt')), aes(x=LECA_trt2, y=mean, fill=interaction(CO2_trt, N_trt))) +
+ggplot(barGraphStats(data=subset(harvestTrt, spp=='LECA' & LECA_trt2!='Other Legume in Monoculture' & LECA_trt2!='Self in Monoculture' & LECA_trt2!='16 Species Polyculture' & mass_total_ind!='NA'), variable='mass_total_ind', byFactorNames=c('LECA_trt2', 'CO2_trt', 'N_trt')), aes(x=LECA_trt2, y=mean, fill=interaction(CO2_trt, N_trt))) +
   geom_bar(stat='identity', position=position_dodge()) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se), position=position_dodge(.9), width=0.2) +
   xlab('Soil Origin') + ylab('Total Biomass') +
-  scale_x_discrete(labels=c('Other Legume in Monoculture'='Other Legume', 'Self in Monoculture'='Grown Alone', 'All Legume Polyculture'='All Legumes'), limits=c('Other Legume in Monoculture', 'Self in Monoculture', 'All Legume Polyculture')) +
+  scale_x_discrete(labels=c('Other Legume in Polyculture'='Other Legume', 'Self in Polyculture'='Grown Alone', 'All Legume Polyculture'='All Legumes'), limits=c('Other Legume in Polyculture', 'Self in Polyculture', 'All Legume Polyculture')) +
   scale_y_continuous(breaks=seq(0,0.2,0.05)) +
   coord_cartesian(ylim=c(0,0.2)) +
   annotate('text', x=0.5, y=0.2, label='(a) LECA Biomass', size=9, hjust=0)
 
-ggplot(barGraphStats(data=subset(harvestRel, spp=='LUPE' & LUPE_trt2!='Other Legume in Polyculture' & LUPE_trt2!='Self in Polyculture' & LUPE_trt2!='16 Species Polyculture'), variable='mass_total', byFactorNames=c('LUPE_trt2', 'CO2_trt', 'N_trt')), aes(x=LUPE_trt2, y=mean, fill=interaction(CO2_trt, N_trt))) +
+ggplot(barGraphStats(data=subset(harvestTrt, spp=='LUPE' & LUPE_trt2!='Other Legume in Monoculture' & LUPE_trt2!='Self in Monoculture' & LUPE_trt2!='16 Species Polyculture' & mass_total_ind!='NA'), variable='mass_total_ind', byFactorNames=c('LUPE_trt2', 'CO2_trt', 'N_trt')), aes(x=LUPE_trt2, y=mean, fill=interaction(CO2_trt, N_trt))) +
   geom_bar(stat='identity', position=position_dodge()) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se), position=position_dodge(.9), width=0.2) +
   xlab('Soil Origin') + ylab('Total Biomass') +
-  scale_x_discrete(labels=c('Other Legume in Monoculture'='Other Legume', 'Self in Monoculture'='Grown Alone', 'All Legume Polyculture'='All Legumes'), limits=c('Other Legume in Monoculture', 'Self in Monoculture', 'All Legume Polyculture')) +
+  scale_x_discrete(labels=c('Other Legume in Polyculture'='Other Legume', 'Self in Polyculture'='Grown Alone', 'All Legume Polyculture'='All Legumes'), limits=c('Other Legume in Polyculture', 'Self in Polyculture', 'All Legume Polyculture')) +
   scale_y_continuous(breaks=seq(0,0.4,0.1)) +
   coord_cartesian(ylim=c(0,0.4)) +
   annotate('text', x=0.5, y=0.4, label='(b) LUPE Biomass', size=9, hjust=0)
 
-ggplot(barGraphStats(data=subset(harvestRel, spp=='AMCA' & AMCA_trt2!='Other Legume in Polyculture' & AMCA_trt2!='Self in Polyculture' & AMCA_trt2!='16 Species Polyculture'), variable='mass_total', byFactorNames=c('AMCA_trt2', 'CO2_trt', 'N_trt')), aes(x=AMCA_trt2, y=mean, fill=interaction(CO2_trt, N_trt))) +
+ggplot(barGraphStats(data=subset(harvestTrt, spp=='AMCA' & AMCA_trt2!='Other Legume in Monoculture' & AMCA_trt2!='Self in Monoculture' & AMCA_trt2!='16 Species Polyculture'), variable='mass_total', byFactorNames=c('AMCA_trt2', 'CO2_trt', 'N_trt')), aes(x=AMCA_trt2, y=mean, fill=interaction(CO2_trt, N_trt))) +
   geom_bar(stat='identity', position=position_dodge()) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se), position=position_dodge(.9), width=0.2) +
   xlab('Soil Origin') + ylab('Total Biomass') +
-  scale_x_discrete(labels=c('Other Legume in Monoculture'='Other Legume', 'Self in Monoculture'='Grown Alone', 'All Legume Polyculture'='All Legumes'), limits=c('Other Legume in Monoculture', 'Self in Monoculture', 'All Legume Polyculture')) +
+  scale_x_discrete(labels=c('Other Legume in Polyculture'='Other Legume', 'Self in Polyculture'='Grown Alone', 'All Legume Polyculture'='All Legumes'), limits=c('Other Legume in Polyculture', 'Self in Polyculture', 'All Legume Polyculture')) +
   scale_y_continuous(breaks=seq(0,0.15,0.05)) +
   coord_cartesian(ylim=c(0,0.15)) +
   annotate('text', x=0.5, y=0.15, label='(c) AMCA Biomass', size=9, hjust=0)
@@ -745,3 +747,247 @@ ggplot(barGraphStats(data=subset(harvestRel, spp=='AMCA' & AMCA_trt2!='Other Leg
 
 
 
+##eCO2 specialization
+#LECA
+lecaNods <- subset(harvestTrt, subset=(spp=='LECA'))%>%
+  filter(LECA_trt2=='Self in Polyculture'|LECA_trt2=='Other Legume in Polyculture')%>%
+  mutate(LECA_trt3=ifelse(LECA_trt2=='Self in Polyculture', 'self', 'other'))%>%
+  filter(CO2_trt=='Cenrich'&N_trt=='Namb'&func_nod_ind!='is.na')%>%
+  select(ring, plot, pot, func_nod_ind, LECA_trt3)%>%
+  #remove duplicate row - FIX THIS
+  group_by(ring, plot, pot, LECA_trt3)%>%
+  summarise(total_nod_ind2=mean(func_nod_ind))%>%
+  ungroup()
+
+lecaSelfNods <- subset(lecaNods, subset=(LECA_trt3=='self'))%>%
+  mutate(self_nods=total_nod_ind2)%>%
+  select(self_nods)
+lecaOtherNods <- subset(lecaNods, subset=(LECA_trt3=='other'))%>%
+  mutate(other_nods=total_nod_ind2)%>%
+  select(other_nods)
+
+lecaNodsSelfBootModel <- boot(lecaSelfNods, rhizSpecializationSelfFunction, R=1000)
+plot(lecaNodsSelfBootModel)
+lecaNodsSelfBoot <- as.data.frame(lecaNodsSelfBootModel$t)
+lecaNodsSelfBootMean <- as.data.frame(rowMeans(lecaNodsSelfBoot[1:1000,]))
+names(lecaNodsSelfBootMean)[names(lecaNodsSelfBootMean) == 'rowMeans(lecaNodsSelfBoot[1:1000, ])'] <- 'self_nods'
+
+lecaNodsOtherBootModel <- boot(lecaOtherNods, rhizSpecializationOtherFunction, R=1000)
+plot(lecaNodsOtherBootModel)
+lecaNodsOtherBoot <- as.data.frame(lecaNodsOtherBootModel$t)
+lecaNodsOtherBootMean <- as.data.frame(rowMeans(lecaNodsOtherBoot[1:1000,]))
+names(lecaNodsOtherBootMean)[names(lecaNodsOtherBootMean) == 'rowMeans(lecaNodsOtherBoot[1:1000, ])'] <- 'other_nods'
+
+lecaSpecializationBoot <- cbind(lecaNodsSelfBootMean, lecaNodsOtherBootMean)%>%
+  mutate(specialization=other_nods/self_nods, spp='LECA')
+
+#LUPE
+lupeNods <- subset(harvestTrt, subset=(spp=='LUPE'))%>%
+  filter(LUPE_trt2=='Self in Polyculture'|LUPE_trt2=='Other Legume in Polyculture')%>%
+  mutate(LUPE_trt3=ifelse(LUPE_trt2=='Self in Polyculture', 'self', 'other'))%>%
+  filter(CO2_trt=='Cenrich'&N_trt=='Namb'&func_nod_ind!='is.na')%>%
+  select(ring, plot, pot, func_nod_ind, LUPE_trt3)%>%
+  #remove duplicate row - FIX THIS
+  group_by(ring, plot, pot, LUPE_trt3)%>%
+  summarise(total_nod_ind2=mean(func_nod_ind))%>%
+  ungroup()
+
+lupeSelfNods <- subset(lupeNods, subset=(LUPE_trt3=='self'))%>%
+  mutate(self_nods=total_nod_ind2)%>%
+  select(self_nods)
+lupeOtherNods <- subset(lupeNods, subset=(LUPE_trt3=='other'))%>%
+  mutate(other_nods=total_nod_ind2)%>%
+  select(other_nods)
+
+lupeNodsSelfBootModel <- boot(lupeSelfNods, rhizSpecializationSelfFunction, R=1000)
+plot(lupeNodsSelfBootModel)
+lupeNodsSelfBoot <- as.data.frame(lupeNodsSelfBootModel$t)
+lupeNodsSelfBootMean <- as.data.frame(rowMeans(lupeNodsSelfBoot[1:1000,]))
+names(lupeNodsSelfBootMean)[names(lupeNodsSelfBootMean) == 'rowMeans(lupeNodsSelfBoot[1:1000, ])'] <- 'self_nods'
+
+lupeNodsOtherBootModel <- boot(lupeOtherNods, rhizSpecializationOtherFunction, R=1000)
+plot(lupeNodsOtherBootModel)
+lupeNodsOtherBoot <- as.data.frame(lupeNodsOtherBootModel$t)
+lupeNodsOtherBootMean <- as.data.frame(rowMeans(lupeNodsOtherBoot[1:1000,]))
+names(lupeNodsOtherBootMean)[names(lupeNodsOtherBootMean) == 'rowMeans(lupeNodsOtherBoot[1:1000, ])'] <- 'other_nods'
+
+lupeSpecializationBoot <- cbind(lupeNodsSelfBootMean, lupeNodsOtherBootMean)%>%
+  mutate(specialization=other_nods/self_nods, spp='LUPE')
+
+#AMCA
+amcaNods <- subset(harvestTrt, subset=(spp=='AMCA'))%>%
+  filter(AMCA_trt2=='Self in Polyculture'|AMCA_trt2=='Other Legume in Polyculture')%>%
+  mutate(AMCA_trt3=ifelse(AMCA_trt2=='Self in Polyculture', 'self', 'other'))%>%
+  filter(CO2_trt=='Cenrich'&N_trt=='Namb'&func_nod_ind!='is.na')%>%
+  select(ring, plot, pot, func_nod_ind, AMCA_trt3)%>%
+  #remove duplicate row - FIX THIS
+  group_by(ring, plot, pot, AMCA_trt3)%>%
+  summarise(total_nod_ind2=mean(func_nod_ind))%>%
+  ungroup()
+
+amcaSelfNods <- subset(amcaNods, subset=(AMCA_trt3=='self'))%>%
+  mutate(self_nods=total_nod_ind2)%>%
+  select(self_nods)
+amcaOtherNods <- subset(amcaNods, subset=(AMCA_trt3=='other'))%>%
+  mutate(other_nods=total_nod_ind2)%>%
+  select(other_nods)
+
+amcaNodsSelfBootModel <- boot(amcaSelfNods, rhizSpecializationSelfFunction, R=1000)
+plot(amcaNodsSelfBootModel)
+amcaNodsSelfBoot <- as.data.frame(amcaNodsSelfBootModel$t)
+amcaNodsSelfBootMean <- as.data.frame(rowMeans(amcaNodsSelfBoot[1:1000,]))
+names(amcaNodsSelfBootMean)[names(amcaNodsSelfBootMean) == 'rowMeans(amcaNodsSelfBoot[1:1000, ])'] <- 'self_nods'
+
+amcaNodsOtherBootModel <- boot(amcaOtherNods, rhizSpecializationOtherFunction, R=1000)
+plot(amcaNodsOtherBootModel)
+amcaNodsOtherBoot <- as.data.frame(amcaNodsOtherBootModel$t)
+amcaNodsOtherBootMean <- as.data.frame(rowMeans(amcaNodsOtherBoot[1:1000,]))
+names(amcaNodsOtherBootMean)[names(amcaNodsOtherBootMean) == 'rowMeans(amcaNodsOtherBoot[1:1000, ])'] <- 'other_nods'
+
+amcaSpecializationBoot <- cbind(amcaNodsSelfBootMean, amcaNodsOtherBootMean)%>%
+  mutate(specialization=other_nods/self_nods, spp='AMCA')%>%
+  #a few go to infinity because so few self pots
+  filter(specialization!='Inf')
+
+#combine spp specializations
+allSpecializationBoot <- rbind(lecaSpecializationBoot, lupeSpecializationBoot, amcaSpecializationBoot)%>%
+  group_by(spp)%>%
+  summarize(specialization_mean=mean(specialization), specialization_sd=sd(specialization))%>%
+  ungroup()%>%
+  mutate(specialization_CI=1.96*specialization_sd)
+
+#plot rhizobial specialization
+ggplot(data=allSpecializationBoot, aes(x=spp, y=specialization_mean, fill=spp)) +
+  geom_bar(stat='identity') +
+  geom_errorbar(aes(ymin=specialization_mean-specialization_CI, ymax=specialization_mean+specialization_CI), width=0.2) +
+  geom_hline(aes(yintercept=1), linetype="dashed") +
+  xlab('Legume Species') +
+  ylab('Rhizobial Specialization') +
+  annotate('text', x=1, y=0.48, label='a', size=10) +
+  annotate('text', x=2, y=0.35, label='a', size=10) +
+  annotate('text', x=3, y=1.35, label='b', size=10) +
+  scale_fill_manual(values=c('#00760a', '#00760a', '#e46c0a'), breaks=c('AMCA', 'LUPE'), labels=c('specialist', 'generalist'))
+#export at 700x500
+
+
+##eN specialization
+#LECA
+lecaNods <- subset(harvestTrt, subset=(spp=='LECA'))%>%
+  filter(LECA_trt2=='Self in Polyculture'|LECA_trt2=='Other Legume in Polyculture')%>%
+  mutate(LECA_trt3=ifelse(LECA_trt2=='Self in Polyculture', 'self', 'other'))%>%
+  filter(CO2_trt=='Camb'&N_trt=='Nenrich'&func_nod_ind!='is.na')%>%
+  select(ring, plot, pot, func_nod_ind, LECA_trt3)%>%
+  #remove duplicate row - FIX THIS
+  group_by(ring, plot, pot, LECA_trt3)%>%
+  summarise(total_nod_ind2=mean(func_nod_ind))%>%
+  ungroup()
+
+lecaSelfNods <- subset(lecaNods, subset=(LECA_trt3=='self'))%>%
+  mutate(self_nods=total_nod_ind2)%>%
+  select(self_nods)
+lecaOtherNods <- subset(lecaNods, subset=(LECA_trt3=='other'))%>%
+  mutate(other_nods=total_nod_ind2)%>%
+  select(other_nods)
+
+lecaNodsSelfBootModel <- boot(lecaSelfNods, rhizSpecializationSelfFunction, R=1000)
+plot(lecaNodsSelfBootModel)
+lecaNodsSelfBoot <- as.data.frame(lecaNodsSelfBootModel$t)
+lecaNodsSelfBootMean <- as.data.frame(rowMeans(lecaNodsSelfBoot[1:1000,]))
+names(lecaNodsSelfBootMean)[names(lecaNodsSelfBootMean) == 'rowMeans(lecaNodsSelfBoot[1:1000, ])'] <- 'self_nods'
+
+lecaNodsOtherBootModel <- boot(lecaOtherNods, rhizSpecializationOtherFunction, R=1000)
+plot(lecaNodsOtherBootModel)
+lecaNodsOtherBoot <- as.data.frame(lecaNodsOtherBootModel$t)
+lecaNodsOtherBootMean <- as.data.frame(rowMeans(lecaNodsOtherBoot[1:1000,]))
+names(lecaNodsOtherBootMean)[names(lecaNodsOtherBootMean) == 'rowMeans(lecaNodsOtherBoot[1:1000, ])'] <- 'other_nods'
+
+lecaSpecializationBoot <- cbind(lecaNodsSelfBootMean, lecaNodsOtherBootMean)%>%
+  mutate(specialization=other_nods/self_nods, spp='LECA')
+
+#LUPE
+lupeNods <- subset(harvestTrt, subset=(spp=='LUPE'))%>%
+  filter(LUPE_trt2=='Self in Polyculture'|LUPE_trt2=='Other Legume in Polyculture')%>%
+  mutate(LUPE_trt3=ifelse(LUPE_trt2=='Self in Polyculture', 'self', 'other'))%>%
+  filter(CO2_trt=='Camb'&N_trt=='Nenrich'&func_nod_ind!='is.na')%>%
+  select(ring, plot, pot, func_nod_ind, LUPE_trt3)%>%
+  #remove duplicate row - FIX THIS
+  group_by(ring, plot, pot, LUPE_trt3)%>%
+  summarise(total_nod_ind2=mean(func_nod_ind))%>%
+  ungroup()
+
+lupeSelfNods <- subset(lupeNods, subset=(LUPE_trt3=='self'))%>%
+  mutate(self_nods=total_nod_ind2)%>%
+  select(self_nods)
+lupeOtherNods <- subset(lupeNods, subset=(LUPE_trt3=='other'))%>%
+  mutate(other_nods=total_nod_ind2)%>%
+  select(other_nods)
+
+lupeNodsSelfBootModel <- boot(lupeSelfNods, rhizSpecializationSelfFunction, R=1000)
+plot(lupeNodsSelfBootModel)
+lupeNodsSelfBoot <- as.data.frame(lupeNodsSelfBootModel$t)
+lupeNodsSelfBootMean <- as.data.frame(rowMeans(lupeNodsSelfBoot[1:1000,]))
+names(lupeNodsSelfBootMean)[names(lupeNodsSelfBootMean) == 'rowMeans(lupeNodsSelfBoot[1:1000, ])'] <- 'self_nods'
+
+lupeNodsOtherBootModel <- boot(lupeOtherNods, rhizSpecializationOtherFunction, R=1000)
+plot(lupeNodsOtherBootModel)
+lupeNodsOtherBoot <- as.data.frame(lupeNodsOtherBootModel$t)
+lupeNodsOtherBootMean <- as.data.frame(rowMeans(lupeNodsOtherBoot[1:1000,]))
+names(lupeNodsOtherBootMean)[names(lupeNodsOtherBootMean) == 'rowMeans(lupeNodsOtherBoot[1:1000, ])'] <- 'other_nods'
+
+lupeSpecializationBoot <- cbind(lupeNodsSelfBootMean, lupeNodsOtherBootMean)%>%
+  mutate(specialization=other_nods/self_nods, spp='LUPE')
+
+#AMCA
+amcaNods <- subset(harvestTrt, subset=(spp=='AMCA'))%>%
+  filter(AMCA_trt2=='Self in Polyculture'|AMCA_trt2=='Other Legume in Polyculture')%>%
+  mutate(AMCA_trt3=ifelse(AMCA_trt2=='Self in Polyculture', 'self', 'other'))%>%
+  filter(CO2_trt=='Camb'&N_trt=='Nenrich'&func_nod_ind!='is.na')%>%
+  select(ring, plot, pot, func_nod_ind, AMCA_trt3)%>%
+  #remove duplicate row - FIX THIS
+  group_by(ring, plot, pot, AMCA_trt3)%>%
+  summarise(total_nod_ind2=mean(func_nod_ind))%>%
+  ungroup()
+
+amcaSelfNods <- subset(amcaNods, subset=(AMCA_trt3=='self'))%>%
+  mutate(self_nods=total_nod_ind2)%>%
+  select(self_nods)
+amcaOtherNods <- subset(amcaNods, subset=(AMCA_trt3=='other'))%>%
+  mutate(other_nods=total_nod_ind2)%>%
+  select(other_nods)
+
+amcaNodsSelfBootModel <- boot(amcaSelfNods, rhizSpecializationSelfFunction, R=1000)
+plot(amcaNodsSelfBootModel)
+amcaNodsSelfBoot <- as.data.frame(amcaNodsSelfBootModel$t)
+amcaNodsSelfBootMean <- as.data.frame(rowMeans(amcaNodsSelfBoot[1:1000,]))
+names(amcaNodsSelfBootMean)[names(amcaNodsSelfBootMean) == 'rowMeans(amcaNodsSelfBoot[1:1000, ])'] <- 'self_nods'
+
+amcaNodsOtherBootModel <- boot(amcaOtherNods, rhizSpecializationOtherFunction, R=1000)
+plot(amcaNodsOtherBootModel)
+amcaNodsOtherBoot <- as.data.frame(amcaNodsOtherBootModel$t)
+amcaNodsOtherBootMean <- as.data.frame(rowMeans(amcaNodsOtherBoot[1:1000,]))
+names(amcaNodsOtherBootMean)[names(amcaNodsOtherBootMean) == 'rowMeans(amcaNodsOtherBoot[1:1000, ])'] <- 'other_nods'
+
+amcaSpecializationBoot <- cbind(amcaNodsSelfBootMean, amcaNodsOtherBootMean)%>%
+  mutate(specialization=other_nods/self_nods, spp='AMCA')%>%
+  #a few go to infinity because so few self pots
+  filter(specialization!='Inf')
+
+#combine spp specializations
+allSpecializationBoot <- rbind(lecaSpecializationBoot, lupeSpecializationBoot, amcaSpecializationBoot)%>%
+  group_by(spp)%>%
+  summarize(specialization_mean=mean(specialization), specialization_sd=sd(specialization))%>%
+  ungroup()%>%
+  mutate(specialization_CI=1.96*specialization_sd)
+
+#plot rhizobial specialization
+ggplot(data=allSpecializationBoot, aes(x=spp, y=specialization_mean, fill=spp)) +
+  geom_bar(stat='identity') +
+  geom_errorbar(aes(ymin=specialization_mean-specialization_CI, ymax=specialization_mean+specialization_CI), width=0.2) +
+  geom_hline(aes(yintercept=1), linetype="dashed") +
+  xlab('Legume Species') +
+  ylab('Rhizobial Specialization') +
+  annotate('text', x=1, y=0.48, label='a', size=10) +
+  annotate('text', x=2, y=0.35, label='a', size=10) +
+  annotate('text', x=3, y=1.35, label='b', size=10) +
+  scale_fill_manual(values=c('#00760a', '#00760a', '#e46c0a'), breaks=c('AMCA', 'LUPE'), labels=c('specialist', 'generalist'))
+#export at 700x500

@@ -1,11 +1,11 @@
 library(plyr)
-library(tidyverse)
 library(ggplot2)
 library(reshape2)
 library(grid)
 library(nlme) 
 library(lsmeans)
 library(lavaan)
+library(tidyverse)
 
 
 setwd('C:\\Users\\Kim\\Dropbox\\NSF BioCON rhizobia\\data\\BioCON data')
@@ -81,16 +81,46 @@ legsppnumANOVA <- aov(logRYT ~ leg_num_spp, data=subset(anppClimate, spp_count==
 summary(legsppnumANOVA)
 lsmeans(legsppnumANOVA, cld~leg_num_spp)
 
-ggplot(barGraphStats(data=subset(anppClimate, spp_count==4 & trt=='Camb_Namb' & order!='2 legumes' & order!='3 legumes'), variable='logRYT', byFactorNames=c('order')), aes(x=order, y=mean)) +
-  geom_bar(stat='identity', fill='white', colour='black') +
+ggplot(barGraphStats(data=subset(anppClimate, spp_count==4 & trt=='Camb_Namb' & order!='2 legumes' & order!='3 legumes' & order!='PEVI'), variable='RYT', byFactorNames=c('legume_num')), aes(x=as.factor(legume_num), y=mean)) +
+  geom_bar(stat='identity', fill='light grey', colour='black') +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se, width=0.2)) +
-  ylab('log Relative Yield Total') +
-  theme(axis.title.x=element_blank()) +
-  annotate('text', x=c(1,2,5,6), y=c(0.14,0.14,0.08,0.17), label='a', size=8) +
-  annotate('text', x=c(3,4), y=c(0.33,0.36), label='b', size=8) +
+  ylab('Relative Yield Total') +
+  xlab('Number of Legumes in Polyculture') +
   scale_y_continuous(expand=c(0,0)) +
-  scale_x_discrete(labels=c('none', 'AMCA', 'LECA', 'LUPE', 'PEVI', 'all 4')) +
-  coord_cartesian(ylim=c(0,0.4))
+  coord_cartesian(ylim=c(0,2)) +
+  annotate('text', x=1, y=1.85, label='ab', size=8) +
+  annotate('text', x=2, y=1.95, label='a', size=8) +
+  annotate('text', x=3, y=1.7, label='b', size=8) +
+  geom_hline(aes(yintercept=1), linetype='dashed')
+
+#eCO2
+ggplot(barGraphStats(data=subset(anppClimate, spp_count==4 & trt=='Cenrich_Namb' & order!='0 legumes' & order!='2 legumes' & order!='3 legumes' & order!='PEVI'), variable='RYT', byFactorNames=c('legume_num')), aes(x=as.factor(legume_num), y=mean)) +
+  geom_bar(stat='identity', fill='light grey', colour='black') +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se, width=0.2)) +
+  ylab('Relative Yield Total') +
+  xlab('Number of Legumes in Polyculture') +
+  scale_y_continuous(expand=c(0,0)) +
+  coord_cartesian(ylim=c(0,2.5)) +
+  # annotate('text', x=1, y=2.0, label='a', size=8) +
+  annotate('text', x=1, y=2.4, label='a', size=8) +
+  annotate('text', x=2, y=1.8, label='b', size=8) +
+  geom_hline(aes(yintercept=1), linetype='dashed')
+
+#eN
+ggplot(barGraphStats(data=subset(anppClimate, spp_count==4 & trt=='Camb_Nenrich' & order!='0 legumes' & order!='2 legumes' & order!='3 legumes' & order!='PEVI' & RYT!='NA'), variable='RYT', byFactorNames=c('legume_num')), aes(x=as.factor(legume_num), y=mean)) +
+  geom_bar(stat='identity', fill='light grey', colour='black') +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se, width=0.2)) +
+  ylab('Relative Yield Total') +
+  xlab('Number of Legumes in Polyculture') +
+  scale_y_continuous(expand=c(0,0)) +
+  coord_cartesian(ylim=c(0,2.4)) +
+  # annotate('text', x=1, y=2.1, label='a', size=8) +
+  annotate('text', x=1, y=2.3, label='a', size=8) +
+  annotate('text', x=2, y=1.8, label='b', size=8) +
+  geom_hline(aes(yintercept=1), linetype='dashed')
+
+  
+
 
 
 #mixed model
@@ -141,3 +171,6 @@ ggplot(subset(legume4to1Climate, trt=='Camb_Namb'), aes(x=gy_precip_cm, y=diff, 
   scale_colour_manual(values=color,
                       labels=c('Amorpha canescens', 'Lespedeza capitata', 'Lupinus perennis', 'Petalostemum villosum'))
 
+
+
+#SEM
