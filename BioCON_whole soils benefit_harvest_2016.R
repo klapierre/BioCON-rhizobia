@@ -1,6 +1,6 @@
 library(lme4)
+library(lmerTest)
 library(boot)
-library(ggplot2)
 library(grid)
 library(tidyverse)
 
@@ -40,11 +40,11 @@ barGraphStats <- function(data, variable, byFactorNames) {
   return(finalSummaryStats)
 }  
 
-setwd('C:\\Users\\Kim\\Dropbox\\NSF BioCON rhizobia\\data\\La Pierre and Simms data\\2016 whole soil benefit')
+setwd('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\NSF BioCON rhizobia\\data\\La Pierre and Simms data\\2016 whole soil benefit')
 
-###import data and planned replicates
+#### import data and planned replicates ####
 #envelope data
-envelope_plant <- read.csv('La Pierre_2016_whole soil_harvest.csv')
+envelope_plant <- read.csv('2016 biomass\\La Pierre_2016_whole soil_harvest.csv')
 
 #split out data on number of plants
 plants <- envelope_plant%>%
@@ -58,11 +58,11 @@ envelope <- envelope_plant%>%
   mutate(root.shoot_harvest=ifelse(root.shoot_harvest=='shoot_env', 's', 'r'))
 
 #pot data
-plan <- read.csv('La Pierre_2016_whole soil_pot setup.csv')%>%
+plan <- read.csv('2016 biomass\\La Pierre_2016_whole soil_pot setup.csv')%>%
   select(-growth_06132016)
 
 #biomass data
-harvest <- read.csv('La Pierre_2016_BioCON_biomass.csv')
+harvest <- read.csv('2016 biomass\\La Pierre_2016_BioCON_biomass.csv')
 
 #split out nodule number
 nodules <- harvest%>%
@@ -78,7 +78,7 @@ biomass <- harvest%>%
   select(envelope, mass_g, root.shoot, notes)
 
 #trt data
-trt <- read.csv('e141_treatments.csv')%>%
+trt <- read.csv('2016 biomass\\e141_treatments.csv')%>%
   #get total number of legumes in each plot
   mutate(tot_legume=Amorpha.canescens+Lespedeza.capitata+Lupinus.perennis+Petalostemum.villosum)
 
@@ -86,7 +86,7 @@ trt <- read.csv('e141_treatments.csv')%>%
 #merge pot, biomass, nodule, and number of plants data
 harvestAll <- merge(envelope, biomass, by=c('envelope'), all=T)%>%
   # mutate(check=ifelse(root.shoot==root.shoot_harvest, 1, 0))%>%
-  filter(pot!='is.na')%>%
+  filter(pot!='is.na')%>% #drops 2 pots
   select(pot, mass_g, root.shoot_harvest)%>%
   spread(key=root.shoot_harvest, value=mass_g)%>%
   #calculate total mass and rename root and shoot mass
@@ -102,10 +102,8 @@ harvestTrt <- merge(harvestAll, plan, by=c('pot'), all=T)%>%
   mutate(LECA_trt=as.factor(paste(Lespedeza.capitata, tot_legume, sep='::')), LUPE_trt=as.factor(paste(Lupinus.perennis, tot_legume, sep='::')), AMCA_trt=as.factor(paste(Amorpha.canescens, tot_legume, sep='::')))%>%
   #remove plants that never grew
   filter(num_plants>0)%>%
-  #calcualte mass and nodules per plant (many pots had more than one plant in them)
-  mutate(mass_total_ind=mass_total/num_plants, total_nod_ind=total_nod/num_plants, func_nod_ind=f_nodules/num_plants)%>%
-  #remove outliers until they can be checked
-  filter(pot!=200004060 & pot!=200003217 & pot!=200001213 & pot!=200003064 & pot!=200003072 & pot!=200003018)
+  #calculate mass and nodules per plant (many pots had more than one plant in them)
+  mutate(mass_total_ind=mass_total/num_plants, total_nod_ind=total_nod/num_plants, func_nod_ind=f_nodules/num_plants)
 
 harvestTrt$LECA_trt2 <- as.factor(with(harvestTrt, ifelse(LECA_trt=='0::1' & spp_count==1, 'Other Legume in Monoculture', ifelse(LECA_trt=='0::1' & spp_count==4, 'Other Legume in Polyculture', ifelse(LECA_trt=='1::1' & spp_count==1, 'Self in Monoculture', ifelse(LECA_trt=='1::1' & spp_count==4, 'Self in Polyculture', ifelse(LECA_trt=='1::4' & spp_count==4, 'All Legume Polyculture', ifelse(spp_count==16, '16 Species Polyculture', 'NA'))))))))
 
@@ -121,7 +119,7 @@ harvestTrt <- harvestTrt%>% select(-LUPE_trt, -LECA_trt, -AMCA_trt)
 
 
 
-###calculate the relative biomass compared to uninoculated controls (percent difference)
+#### calculate the relative biomass compared to uninoculated controls (percent difference) ####
 #subset out the soil inoculation controls and inoculated plants
 harvestCtl <- harvestTrt%>%
   filter(plot=='control')%>%
@@ -156,7 +154,9 @@ harvestIno <- harvestTrt%>% filter(plot!='control')
 
 #merge uninoculated controls back with inoculated plants, calculate relative cover, drop unneccesary columns
 harvestRel <- merge(harvestIno, harvestCtlAll, by=c('CO2_trt', 'N_trt', 'spp'), all=T)%>%
-  mutate(mass_shoot_rel=((mass_shoot-mass_shoot_ctl)/mass_shoot_ctl), mass_root_rel=((mass_root-mass_root_ctl)/mass_root_ctl), mass_total_rel=((mass_total-mass_total_ctl)/mass_total_ctl))%>%
+  mutate(mass_shoot_rel=((mass_shoot-mass_shoot_ctl)/mass_shoot_ctl), 
+         mass_root_rel=((mass_root-mass_root_ctl)/mass_root_ctl), 
+         mass_total_rel=((mass_total-mass_total_ctl)/mass_total_ctl))%>%
   select(-mass_shoot_ctl, -mass_root_ctl, -mass_total_ctl)%>%
   #average across replicates
   group_by(CO2_trt, N_trt, spp, ring, plot, spp_count, group_count, experiment, monospecies, monogroup, Achillea.millefolium, Agropyron.repens, Amorpha.canescens, Andropogon.gerardi, Anemone.cylindrica, Asclepias.tuberosa, Bouteloua.gracilis, Bromus.inermis, Koeleria.cristata, Lespedeza.capitata, Lupinus.perennis, Petalostemum.villosum, Poa.pratensis, Schizachyrium.scoparium, Solidago.rigida, Sorghastrum.nutans, C.3, C.4, Forb, Legume, tot_legume, LECA_trt2, LUPE_trt2, AMCA_trt2)%>%
@@ -164,51 +164,70 @@ harvestRel <- merge(harvestIno, harvestCtlAll, by=c('CO2_trt', 'N_trt', 'spp'), 
   mutate(trt=paste(CO2_trt, N_trt, sep='_'))
 
 
-###soil feedbacks under control conditions
+#### soil feedbacks under control conditions ####
 #subset out CO2 and N treatments
 #separate models for each species
 
 #shoot mass
 summary(lmer(mass_shoot_rel ~ LECA_trt2 + (1|ring), data=subset(harvestRel, spp=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+anova(lmer(mass_shoot_rel ~ LECA_trt2 + (1|ring), data=subset(harvestRel, spp=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich'))) #no effect
 
 summary(lmer(mass_shoot_rel ~ LUPE_trt2 + (1|ring), data=subset(harvestRel, spp=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+anova(lmer(mass_shoot_rel ~ LUPE_trt2 + (1|ring), data=subset(harvestRel, spp=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich'))) #no effect
 
 summary(lmer(mass_shoot_rel ~ AMCA_trt2 + (1|ring), data=subset(harvestRel, spp=='AMCA' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+anova(lmer(mass_shoot_rel ~ AMCA_trt2 + (1|ring), data=subset(harvestRel, spp=='AMCA' & CO2_trt!='Cenrich' & N_trt!='Nenrich'))) #no effect
 
 #root mass
 summary(lmer(mass_root_rel ~ LECA_trt2 + (1|ring), data=subset(harvestRel, spp=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+anova(lmer(mass_root_rel ~ LECA_trt2 + (1|ring), data=subset(harvestRel, spp=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich'))) #no effect
 
 summary(lmer(mass_root_rel ~ LUPE_trt2 + (1|ring), data=subset(harvestRel, spp=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+anova(lmer(mass_root_rel ~ LUPE_trt2 + (1|ring), data=subset(harvestRel, spp=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich'))) #no effect
+
 
 summary(lmer(mass_root_rel ~ AMCA_trt2 + (1|ring), data=subset(harvestRel, spp=='AMCA' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+anova(lmer(mass_root_rel ~ AMCA_trt2 + (1|ring), data=subset(harvestRel, spp=='AMCA' & CO2_trt!='Cenrich' & N_trt!='Nenrich'))) #no effect
 
 #total biomass
 summary(lmer(mass_total_rel ~ LECA_trt2 + (1|ring), data=subset(harvestRel, spp=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+anova(lmer(mass_total_rel ~ LECA_trt2 + (1|ring), data=subset(harvestRel, spp=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich'))) #no effect
 
 summary(lmer(mass_total_rel ~ LUPE_trt2 + (1|ring), data=subset(harvestRel, spp=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+anova(lmer(mass_total_rel ~ LUPE_trt2 + (1|ring), data=subset(harvestRel, spp=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich'))) #no effect
 
 summary(lmer(mass_total_rel ~ AMCA_trt2 + (1|ring), data=subset(harvestRel, spp=='AMCA' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+anova(lmer(mass_total_rel ~ AMCA_trt2 + (1|ring), data=subset(harvestRel, spp=='AMCA' & CO2_trt!='Cenrich' & N_trt!='Nenrich'))) #no effect
 
 #functional nodules
 summary(lmer(f_nodules ~ LECA_trt2 + (1|ring), data=subset(harvestRel, spp=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+anova(lmer(f_nodules ~ LECA_trt2 + (1|ring), data=subset(harvestRel, spp=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich'))) #***
 
 summary(lmer(f_nodules ~ LUPE_trt2 + (1|ring), data=subset(harvestRel, spp=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+anova(lmer(f_nodules ~ LUPE_trt2 + (1|ring), data=subset(harvestRel, spp=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich'))) #**
 
 summary(lmer(f_nodules ~ AMCA_trt2 + (1|ring), data=subset(harvestRel, spp=='AMCA' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+anova(lmer(f_nodules ~ AMCA_trt2 + (1|ring), data=subset(harvestRel, spp=='AMCA' & CO2_trt!='Cenrich' & N_trt!='Nenrich'))) #no effect
 
 #non-functional nodules
 summary(lmer(n_nodules ~ LECA_trt2 + (1|ring), data=subset(harvestRel, spp=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+anova(lmer(n_nodules ~ LECA_trt2 + (1|ring), data=subset(harvestRel, spp=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich'))) #*
 
 summary(lmer(n_nodules ~ LUPE_trt2 + (1|ring), data=subset(harvestRel, spp=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+anova(lmer(n_nodules ~ LUPE_trt2 + (1|ring), data=subset(harvestRel, spp=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich'))) #no effect
 
 summary(lmer(n_nodules ~ AMCA_trt2 + (1|ring), data=subset(harvestRel, spp=='AMCA' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+anova(lmer(n_nodules ~ AMCA_trt2 + (1|ring), data=subset(harvestRel, spp=='AMCA' & CO2_trt!='Cenrich' & N_trt!='Nenrich'))) #no effect
 
 #total nodules
 summary(lmer(total_nod ~ LECA_trt2 + (1|ring), data=subset(harvestRel, spp=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+anova(lmer(total_nod ~ LECA_trt2 + (1|ring), data=subset(harvestRel, spp=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich'))) #***
 
 summary(lmer(total_nod ~ LUPE_trt2 + (1|ring), data=subset(harvestRel, spp=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+anova(lmer(total_nod ~ LUPE_trt2 + (1|ring), data=subset(harvestRel, spp=='LUPE' & CO2_trt!='Cenrich' & N_trt!='Nenrich'))) #**
 
 summary(lmer(total_nod ~ AMCA_trt2 + (1|ring), data=subset(harvestRel, spp=='AMCA' & CO2_trt!='Cenrich' & N_trt!='Nenrich')))
+anova(lmer(total_nod ~ AMCA_trt2 + (1|ring), data=subset(harvestRel, spp=='AMCA' & CO2_trt!='Cenrich' & N_trt!='Nenrich'))) #no effect
 
 #relativized biomass response (to uninoculated plants) and averaged across all pot reps
 feedbackLECAbio <- ggplot(barGraphStats(data=subset(harvestRel, spp=='LECA' & CO2_trt!='Cenrich' & N_trt!='Nenrich'), variable='mass_total_rel', byFactorNames=c('LECA_trt2')), aes(x=LECA_trt2, y=mean)) +
