@@ -492,7 +492,7 @@ ggplot(data=allSpecializationBoot, aes(x=spp, y=specialization_mean, fill=spp)) 
   annotate('text', x=1, y=0.48, label='a', size=10) +
   annotate('text', x=2, y=0.35, label='a', size=10) +
   annotate('text', x=3, y=1.35, label='b', size=10) +
-  scale_fill_manual(values=c('#00760a', '#00760a', '#e46c0a'), breaks=c('AMCA', 'LUPE'), labels=c('specialist', 'generalist'))
+  scale_fill_manual(values=c('#00760a', '#00760a', '#e46c0a'), breaks=c('AMCA', 'LECA', 'LUPE'), labels=c('specialist','specialist', 'generalist'))
 #export at 700x500
 
 
@@ -626,7 +626,7 @@ ggplot(data=allSpecializationBoot, aes(x=spp, y=specialization_mean, fill=spp)) 
   # annotate('text', x=1, y=0.5, label='a', size=10) +
   # annotate('text', x=2, y=0.4, label='a', size=10) +
   # annotate('text', x=3, y=1.3, label='b', size=10) +
-  scale_fill_manual(values=c('#00760a', '#00760a', '#e46c0a'), breaks=c('AMCA', 'LUPE'), labels=c('specialist', 'generalist'))
+  scale_fill_manual(values=c('#00760a', '#00760a', '#e46c0a'), breaks=c('AMCA', 'LECA', 'LUPE'), labels=c('specialist', 'specialist', 'generalist'))
 #export at 700x500
 
 

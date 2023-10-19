@@ -8,12 +8,12 @@ library(lavaan)
 library(tidyverse)
 
 
-setwd('C:\\Users\\Kim\\Dropbox\\NSF BioCON rhizobia\\data\\BioCON data')
+setwd('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\NSF BioCON rhizobia\\data\\BioCON data')
 
-source('C:\\Users\\Kim\\Desktop\\R files - laptop\\BioCON-rhizobia\\BioCON_treatment data.R', chdir = T)
-source('C:\\Users\\Kim\\Desktop\\R files - laptop\\BioCON-rhizobia\\BioCON_climate data.R', chdir = T)
-source('C:\\Users\\Kim\\Desktop\\R files - laptop\\BioCON-rhizobia\\BioCON_anpp data.R', chdir = T)
-source('C:\\Users\\Kim\\Desktop\\R files - laptop\\BioCON-rhizobia\\BioCON_cover data.R', chdir = T)
+source('C:\\Users\\kjkomatsu\\Desktop\\R files\\BioCON-rhizobia\\BioCON_treatment data.R', chdir = T)
+source('C:\\Users\\kjkomatsu\\Desktop\\R files\\BioCON-rhizobia\\BioCON_climate data.R', chdir = T)
+source('C:\\Users\\kjkomatsu\\Desktop\\R files\\BioCON-rhizobia\\BioCON_anpp data.R', chdir = T)
+source('C:\\Users\\kjkomatsu\\Desktop\\R files\\BioCON-rhizobia\\BioCON_cover data.R', chdir = T)
 
 #ggplot theme set
 theme_set(theme_bw())
@@ -174,3 +174,4 @@ ggplot(subset(legume4to1Climate, trt=='Camb_Namb'), aes(x=gy_precip_cm, y=diff, 
 
 
 #SEM
+

@@ -7,14 +7,14 @@ library(lsmeans)
 library(lavaan)
 library(tidyverse)
 
-source('C:\\Users\\Kim\\Desktop\\general R code\\general-R-code\\bar graph summary stats.r', chdir=T)
-source('C:\\Users\\Kim\\Desktop\\general R code\\general-R-code\\ggplot_theme set.r', chdir=T)
-source('C:\\Users\\Kim\\Desktop\\R files - laptop\\BioCON-rhizobia\\BioCON_treatment data.r', chdir=T)
-source('C:\\Users\\Kim\\Desktop\\R files - laptop\\BioCON-rhizobia\\BioCON_climate data.r', chdir=T)
-source('C:\\Users\\Kim\\Desktop\\R files - laptop\\BioCON-rhizobia\\BioCON_anpp data.r', chdir=T)
-source('C:\\Users\\Kim\\Desktop\\R files - laptop\\BioCON-rhizobia\\BioCON_cover data.r', chdir=T)
+source('C:\\Users\\kjkomatsu\\Desktop\\general R code\\general-R-code\\bar graph summary stats.r', chdir=T)
+source('C:\\Users\\kjkomatsu\\Desktop\\general R code\\general-R-code\\ggplot_theme set.r', chdir=T)
+source('C:\\Users\\kjkomatsu\\Desktop\\R files\\BioCON-rhizobia\\BioCON_treatment data.r', chdir=T)
+source('C:\\Users\\kjkomatsu\\Desktop\\R files\\BioCON-rhizobia\\BioCON_climate data.r', chdir=T)
+source('C:\\Users\\kjkomatsu\\Desktop\\R files\\BioCON-rhizobia\\BioCON_anpp data.r', chdir=T)
+source('C:\\Users\\kjkomatsu\\Desktop\\R files\\BioCON-rhizobia\\BioCON_cover data.r', chdir=T)
 
-setwd('C:\\Users\\Kim\\Dropbox\\NSF BioCON rhizobia\\data\\BioCON data')
+setwd('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\NSF BioCON rhizobia\\data\\BioCON data')
 
 #merge ANPP and climate data
 anppClimate <- merge(anppRY, climate)

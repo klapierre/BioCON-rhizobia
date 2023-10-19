@@ -3,9 +3,9 @@ library(reshape2)
 library(boot)
 library(tidyverse)
 
-setwd('C:\\Users\\Kim\\Dropbox\\NSF BioCON rhizobia\\data\\BioCON data')
+setwd('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\NSF BioCON rhizobia\\data\\BioCON data')
 
-source('C:\\Users\\Kim\\Desktop\\R files - laptop\\\\BioCON-rhizobia\\BioCON_treatment data.r', chdir=T)
+source('C:\\Users\\kjkomatsu\\Desktop\\R files\\BioCON-rhizobia\\BioCON_treatment data.r', chdir=T)
 
 ###bar graph summary statistics function
 #barGraphStats(data=, variable="", byFactorNames=c(""))
