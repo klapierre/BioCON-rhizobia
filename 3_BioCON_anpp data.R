@@ -9,182 +9,72 @@ library(tidyverse)
 
 setwd('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\NSF BioCON rhizobia\\data\\BioCON data')
 
+
+#### Source treatment data ####
 source('C:\\Users\\kjkomatsu\\Desktop\\R files\\BioCON-rhizobia\\1_BioCON_treatment data.r', chdir=T)
 
-###bar graph summary statistics function
-#barGraphStats(data=, variable="", byFactorNames=c(""))
+#### Read in ANPP data from 1998-2020
+anpp <- read.table('e141_Plant aboveground biomass data_1998-2020.txt', sep="\t", header=TRUE) %>%
+  rename(plot=Plot, ring=Ring) %>% 
+  select(-Sampling.., -CO2.Treatment, -Nitrogen.Treatment, -CountOfSpecies, -CountOfGroup, -Experiment, -monospecies, -Monogroup) %>% 
+  #convert date column to something useful
+  left_join(trt) %>% 
+  mutate(date=as.Date(as.character(Date), format='%m/%d/%Y'),
+         year=as.numeric(format(date, '%Y')),
+         month=as.factor(format(date, '%B'))) %>% 
+  #remove trailing spaces, fixing capitalization, replacing . with space
+  mutate(Species=str_squish(Species),
+         Species=str_to_sentence(Species),
+         monospecies=str_squish(monospecies),
+         monospecies=str_to_sentence(monospecies),
+         monospecies=chartr(".", " ", monospecies)) %>% 
+  #remove non-vascular and dead biomass
+  filter(!(Species %in% c('Moss', 'Oak leaves', 'Bare ground', 'Mosses & lichens', 'Miscellaneous litter'))) %>%   
+  #rename species to monospecies if labeled as unsorted/green biomass in a monoculture
+  mutate(Species=ifelse(spp_count==1 & Species %in% c('Unsorted biomass', 'Green biomass'),
+                        monospecies, Species)) %>% 
+  #rename species to other if not one of the focal species for the given plot
+  rowwise() %>% 
+  mutate(species2=ifelse(grepl(Species, spp_trt), Species, "other")) %>% 
+  #drop 0 spp plots and terraCON plots
+  filter(spp_count>0,
+         !(Water.Treatment. %in% c('H2Oamb','H2Oneg')),
+         !(Temp.Treatment. %in% c('HTamb','HTelev'))) %>% 
+  #get max value across spring and fall clipping
+  group_by(plot, ring, CO2_trt, N_trt, spp_count, group_count, experiment, monospecies, monogroup, year, species2) %>% 
+  summarise(anpp=max(Aboveground.Biomass..g.m.2.)) %>% 
+  ungroup()
 
-barGraphStats <- function(data, variable, byFactorNames) {
-  count <- length(byFactorNames)
-  N <- aggregate(data[[variable]], data[byFactorNames], FUN=length)
-  names(N)[1:count] <- byFactorNames
-  names(N) <- sub("^x$", "N", names(N))
-  mean <- aggregate(data[[variable]], data[byFactorNames], FUN=mean)
-  names(mean)[1:count] <- byFactorNames
-  names(mean) <- sub("^x$", "mean", names(mean))
-  sd <- aggregate(data[[variable]], data[byFactorNames], FUN=sd)
-  names(sd)[1:count] <- byFactorNames
-  names(sd) <- sub("^x$", "sd", names(sd))
-  preSummaryStats <- merge(N, mean, by=byFactorNames)
-  finalSummaryStats <- merge(preSummaryStats, sd, by=byFactorNames)
-  finalSummaryStats$se <- finalSummaryStats$sd / sqrt(finalSummaryStats$N)
-  return(finalSummaryStats)
-}  
 
-theme_set(theme_bw())
-theme_update(axis.title.x=element_text(size=20, vjust=-0.35), axis.text.x=element_text(size=16),
-             axis.title.y=element_text(size=20, angle=90, vjust=0.5), axis.text.y=element_text(size=16),
-             plot.title = element_text(size=24, vjust=2),
-             panel.grid.major=element_blank(), panel.grid.minor=element_blank(),
-             legend.title=element_blank(), legend.text=element_text(size=20))
+#### Calculate Relative Yield and Relative Yield Total for each plot ####
 
+#subset monocultures and drop non-focal species biomass
+anppMono <- anpp %>% 
+  filter(spp_count==1, species2!='other') %>% 
+  #calculate avearge species monoculture biomass for each year and CO2/N trt
+  group_by(year, CO2_trt, N_trt, species2) %>% 
+  summarise(mono_anpp_mean=mean(anpp)) %>% 
+  ungroup() %>% 
+  #remove species with 0 biomass in monoculture
+  filter(mono_anpp_mean>0)
 
+#subset polycultures and calculate Relative Yield
+anppPoly <- anpp %>% 
+  filter(spp_count>1, species2!='other') %>% 
+  #remove species without biomass
+  filter(anpp>0) %>% 
+  #join monoculture data
+  left_join(anppMono) %>% 
+  #calculate relative yield for each species
+  mutate(RY=ifelse(spp_count==4, anpp/(mono_anpp_mean/4),
+            ifelse(spp_count==9, anpp/(mono_anpp_mean/9),
+                   anpp/(mono_anpp_mean/16))))
 
-#ANPP data from 1998-2012 (from web; IMPORTANT: be careful that extra spaces are removed from after species names if data is newly downloaded from web)
-anppInitial <- read.csv('e141_plant aboveground biomass_1998-2012.csv')
-
-#ANPP data from 2013-2014 (from Peter Reich)
-anppLast <- read.csv('e141_plant aboveground biomass_2013-2014.csv')
-
-#get year and month for 1998-2012 data
-anppInitial$date <- as.Date(as.character(anppInitial$date), format='%m/%d/%Y') #make date column into a date
-anppInitial$year <- as.numeric(format(anppInitial$date, '%Y')) #year as numeric
-anppInitial$month <- as.factor(format(anppInitial$date, '%B')) #month in text format
-anppInitialYear <- anppInitial[,-2]
-
-#transpose 2013-2014 data to match 1998-2012 data structure
-anppLastLong <- melt(anppLast, id.vars=c('sampling_num', 'year', 'month', 'ring', 'plot', 'CO2_trt', 'N_trt', 'water_trt', 'temp_trt', 'spp_count', 'group_count', 'experiment', 'monospecies', 'monogroup'), variable.name='species', value.name='anpp')
-anppLastLongComplete <- anppLastLong[complete.cases(anppLastLong[,16]),]
-
-#append 2013-2014 data to the initial dataset
-anppAll <- rbind(anppInitialYear, anppLastLongComplete)
-
-#rename Green.Biomass as Unsorted.Biomass (inconsistantly named across years and seasons, but never both used at once)
-anppAll$species <- as.character(anppAll$species)
-anppAll$species2 <- as.character(ifelse(anppAll$species=='Green.Biomass', 'Unsorted.Biomass', anppAll$species))
-
-#anpp for the 16 BioCON species only (i.e., removing weeds, litter, etc.)
-anpp16 <- anppAll[(anppAll$species %in% c("Achillea.millefolium","Asclepias.tuberosa",
-                                          "Koeleria.cristata","Lupinus.perennis","Poa.pratensis",
-                                          "Sorghastrum.nutans","Agropyron.repens","Andropogon.gerardi",
-                                          "Bromus.inermis","Petalostemum.villosum","Amorpha.canescens",
-                                          "Bouteloua.gracilis","Schizachyrium.scoparium", "Solidago.rigida",
-                                          "Anemone.cylindrica", "Lespedeza.capitata", "Unsorted.Biomass",
-                                          "Green.Biomass")),]
-
-#get species anpp as columns
-anpp <- dcast(anpp16, sampling_num + year + month + plot + ring + CO2_trt + N_trt + spp_count + group_count + experiment + monospecies + monogroup + water_trt + temp_trt ~ species2, value.var='anpp')
-anpp[is.na(anpp)] <- 0
-names(anpp)[names(anpp)=="Achillea.millefolium"] <- "ACMI"
-names(anpp)[names(anpp)=="Asclepias.tuberosa"] <- "ASTU"
-names(anpp)[names(anpp)=="Koeleria.cristata"] <- "KOCR"
-names(anpp)[names(anpp)=="Lupinus.perennis"] <- "LUPE"
-names(anpp)[names(anpp)=="Poa.pratensis"] <- "POPR"
-names(anpp)[names(anpp)=="Sorghastrum.nutans"] <- "SONU"
-names(anpp)[names(anpp)=="Agropyron.repens"] <- "AGRE"
-names(anpp)[names(anpp)=="Andropogon.gerardi"] <- "ANGE"
-names(anpp)[names(anpp)=="Bromus.inermis"] <- "BRIN"
-names(anpp)[names(anpp)=="Petalostemum.villosum"] <- "PEVI"
-names(anpp)[names(anpp)=="Amorpha.canescens"] <- "AMCA"
-names(anpp)[names(anpp)=="Bouteloua.gracilis"] <- "BOGR"
-names(anpp)[names(anpp)=="Schizachyrium.scoparium"] <- "SCSC"
-names(anpp)[names(anpp)=="Solidago.rigida"] <- "SORI"
-names(anpp)[names(anpp)=="Anemone.cylindrica"] <- "ANCY"
-names(anpp)[names(anpp)=="Lespedeza.capitata"] <- "LECA"
-names(anpp)[names(anpp)=="Unsorted.Biomass"] <- "Unsort"
-
-#merge anpp and trt data
-anppTrt <- merge(anpp, trt, all=T)
-
-#remove temp and water manipulation data, bareground plots
-anppSub <- subset(anppTrt, subset=(temp_trt!='HTamb' & temp_trt!='HTelv' & water_trt!='H2Oamb' & water_trt!='H2Oneg' & spp_count!=0))
-
-#get rid of 16 spp weeds in plots where they are labeled as spp
-anppSub$ACMI1 <- with(anppSub, ifelse(Achillea.millefolium==1, ACMI, 0))
-anppSub$AGRE1 <- with(anppSub, ifelse(Agropyron.repens==1, AGRE, 0))
-anppSub$AMCA1 <- with(anppSub, ifelse(Amorpha.canescens==1, AMCA, 0))
-anppSub$ANGE1 <- with(anppSub, ifelse(Andropogon.gerardi==1, ANGE, 0))
-anppSub$ANCY1 <- with(anppSub, ifelse(Anemone.cylindrica==1, ANCY, 0))
-anppSub$ASTU1 <- with(anppSub, ifelse(Asclepias.tuberosa==1, ASTU, 0))
-anppSub$BOGR1 <- with(anppSub, ifelse(Bouteloua.gracilis==1, BOGR, 0))
-anppSub$BRIN1 <- with(anppSub, ifelse(Bromus.inermis==1, BRIN, 0))
-anppSub$KOCR1 <- with(anppSub, ifelse(Koeleria.cristata==1, KOCR, 0))
-anppSub$LECA1 <- with(anppSub, ifelse(Lespedeza.capitata==1, LECA, 0))
-anppSub$LUPE1 <- with(anppSub, ifelse(Lupinus.perennis==1, LUPE, 0))
-anppSub$PEVI1 <- with(anppSub, ifelse(Petalostemum.villosum==1, PEVI, 0))
-anppSub$POPR1 <- with(anppSub, ifelse(Poa.pratensis==1, POPR, 0))
-anppSub$SCSC1 <- with(anppSub, ifelse(Schizachyrium.scoparium==1, SCSC, 0))
-anppSub$SORI1 <- with(anppSub, ifelse(Solidago.rigida==1, SORI, 0))
-anppSub$SONU1 <- with(anppSub, ifelse(Sorghastrum.nutans==1, SONU, 0))
-anppNoTrt <- subset(anppSub, select=-c(Achillea.millefolium, Agropyron.repens, Amorpha.canescens, Andropogon.gerardi, Anemone.cylindrica, Asclepias.tuberosa, Bouteloua.gracilis, Bromus.inermis, Koeleria.cristata, Lespedeza.capitata, Lupinus.perennis, Petalostemum.villosum, Poa.pratensis, Schizachyrium.scoparium, Solidago.rigida, Sorghastrum.nutans, CO2_trt, N_trt, spp_count, group_count, experiment, monospecies, monogroup, sampling_num, water_trt, temp_trt, C.3, C.4, Forb, Legume, legume_spp, legume_num, leg_num_spp, trt, spp_trt, ACMI, ASTU, KOCR, LUPE, POPR, SONU, AGRE, ANGE, BRIN, PEVI, AMCA, BOGR, SCSC, SORI, ANCY, LECA))
-names(anppNoTrt)[names(anppNoTrt)=="ACMI1"] <- "Achillea.millefolium"
-names(anppNoTrt)[names(anppNoTrt)=="ASTU1"] <- "Asclepias.tuberosa"
-names(anppNoTrt)[names(anppNoTrt)=="KOCR1"] <- "Koeleria.cristata"
-names(anppNoTrt)[names(anppNoTrt)=="LUPE1"] <- "Lupinus.perennis"
-names(anppNoTrt)[names(anppNoTrt)=="POPR1"] <- "Poa.pratensis"
-names(anppNoTrt)[names(anppNoTrt)=="SONU1"] <- "Sorghastrum.nutans"
-names(anppNoTrt)[names(anppNoTrt)=="AGRE1"] <- "Agropyron.repens"
-names(anppNoTrt)[names(anppNoTrt)=="ANGE1"] <- "Andropogon.gerardi"
-names(anppNoTrt)[names(anppNoTrt)=="BRIN1"] <- "Bromus.inermis"
-names(anppNoTrt)[names(anppNoTrt)=="PEVI1"] <- "Petalostemum.villosum"
-names(anppNoTrt)[names(anppNoTrt)=="AMCA1"] <- "Amorpha.canescens"
-names(anppNoTrt)[names(anppNoTrt)=="BOGR1"] <- "Bouteloua.gracilis"
-names(anppNoTrt)[names(anppNoTrt)=="SCSC1"] <- "Schizachyrium.scoparium"
-names(anppNoTrt)[names(anppNoTrt)=="SORI1"] <- "Solidago.rigida"
-names(anppNoTrt)[names(anppNoTrt)=="ANCY1"] <- "Anemone.cylindrica"
-names(anppNoTrt)[names(anppNoTrt)=="LECA1"] <- "Lespedeza.capitata"
-names(anppNoTrt)[names(anppNoTrt)=="Unsort"] <- "Unsorted.Biomass"
-anppTrue16 <- melt(anppNoTrt, id.vars=c('plot', 'ring', 'year', 'month'), variable.name='species', value.name='anpp')
-
-#merge again with trt data
-anppTrue16Trt <- merge(anppTrue16, trt)
-
-#fixing problem with "unsorted" and "green" biomass in monocultures not being labeled as the monospecies; Peter okayed this assumption Apr 28 2015
-anppTrue16Trt$species <- as.character(anppTrue16Trt$species)
-anppTrue16Trt$monospecies <- as.character(anppTrue16Trt$monospecies)
-anppTrue16TrtNonzero <- subset(anppTrue16Trt, subset=(anpp>0))
-anppTrue16TrtNonzero$fix <- ifelse(anppTrue16TrtNonzero$species=='Unsorted.Biomass', 1, 0)
-anppTrue16TrtNonzero$fix2 <- anppTrue16TrtNonzero$spp_count+anppTrue16TrtNonzero$fix
-anppTrue16TrtNonzero$species <- as.factor(with(anppTrue16TrtNonzero, ifelse(fix2==2, monospecies, species)))
-
-#take max of spring and fall biomass values for each species in each plot and year
-anppMax <- ddply(anppTrue16TrtNonzero, c('year', 'plot', 'ring', 'CO2_trt', 'N_trt', 'spp_count', 'group_count', 'experiment', 'monospecies', 'monogroup', 'species', 'Achillea.millefolium', 'Agropyron.repens', 'Amorpha.canescens', 'Andropogon.gerardi', 'Anemone.cylindrica', 'Asclepias.tuberosa', 'Bouteloua.gracilis', 'Bromus.inermis', 'Koeleria.cristata', 'Lespedeza.capitata', 'Lupinus.perennis', 'Petalostemum.villosum', 'Poa.pratensis', 'Schizachyrium.scoparium', 'Solidago.rigida', 'Sorghastrum.nutans', 'C.3', 'C.4', 'Forb', 'Legume', 'legume_num', 'legume_spp', 'leg_num_spp', 'trt', 'spp_trt'), summarise, anpp=max(anpp))
-
-#subset out monocultures
-anppMono <- subset(anppMax, subset=(spp_count==1 & anpp!=0))
-#subset out polycultures
-anppPoly <- subset(anppMax, subset=(spp_count!=1 & anpp!=0))
-
-#calculate average biomass of each species in monoculture by year, CO2 and N trt
-anppMonoAvg <- aggregate(anppMono$anpp, by=list(year=anppMono$year, CO2_trt=anppMono$CO2_trt, N_trt=anppMono$N_trt, species=anppMono$species, trt=anppMono$trt), FUN=mean)
-names(anppMonoAvg)[names(anppMonoAvg)=="x"] <- "mono_anpp"
-
-#make species biomass as columns
-anppMonoAvgWide <- dcast(anppMonoAvg, year + CO2_trt + N_trt + trt ~ species, value.var='mono_anpp')
-
-names(anppMonoAvgWide)[names(anppMonoAvgWide)=="Achillea.millefolium"] <- "ACMImono"
-names(anppMonoAvgWide)[names(anppMonoAvgWide)=="Agropyron.repens"] <- "AGREmono"
-names(anppMonoAvgWide)[names(anppMonoAvgWide)=="Amorpha.canescens"] <- "AMCAmono"
-names(anppMonoAvgWide)[names(anppMonoAvgWide)=="Andropogon.gerardi"] <- "ANGEmono"
-names(anppMonoAvgWide)[names(anppMonoAvgWide)=="Anemone.cylindrica"] <- "ANCYmono"
-names(anppMonoAvgWide)[names(anppMonoAvgWide)=="Asclepias.tuberosa"] <- "ASTUmono"
-names(anppMonoAvgWide)[names(anppMonoAvgWide)=="Bouteloua.gracilis"] <- "BOGRmono"
-names(anppMonoAvgWide)[names(anppMonoAvgWide)=="Bromus.inermis"] <- "BRINmono"
-names(anppMonoAvgWide)[names(anppMonoAvgWide)=="Koeleria.cristata"] <- "KOCRmono"
-names(anppMonoAvgWide)[names(anppMonoAvgWide)=="Lespedeza.capitata"] <- "LECAmono"
-names(anppMonoAvgWide)[names(anppMonoAvgWide)=="Lupinus.perennis"] <- "LUPEmono"
-names(anppMonoAvgWide)[names(anppMonoAvgWide)=="Petalostemum.villosum"] <- "PEVImono"
-names(anppMonoAvgWide)[names(anppMonoAvgWide)=="Poa.pratensis"] <- "POPRmono"
-names(anppMonoAvgWide)[names(anppMonoAvgWide)=="Schizachyrium.scoparium"] <- "SCSCmono"
-names(anppMonoAvgWide)[names(anppMonoAvgWide)=="Solidago.rigida"] <- "SORImono"
-names(anppMonoAvgWide)[names(anppMonoAvgWide)=="Sorghastrum.nutans"] <- "SONUmono"
-
-#calculate total plot biomass
-anppSum <- with(anppPoly, aggregate(anpp, by=list(year=year, plot=plot, ring=ring, CO2_trt=CO2_trt, N_trt=N_trt, spp_count=spp_count, group_count=group_count, experiment=experiment, monogroup=monogroup, Achillea.millefolium=Achillea.millefolium, Agropyron.repens=Agropyron.repens, Amorpha.canescens=Amorpha.canescens, Andropogon.gerardi=Andropogon.gerardi, Anemone.cylindrica=Anemone.cylindrica, Asclepias.tuberosa=Asclepias.tuberosa, Bouteloua.gracilis=Bouteloua.gracilis, Bromus.inermis=Bromus.inermis, Koeleria.cristata=Koeleria.cristata, Lespedeza.capitata=Lespedeza.capitata, Lupinus.perennis=Lupinus.perennis, Petalostemum.villosum=Petalostemum.villosum, Poa.pratensis=Poa.pratensis, Schizachyrium.scoparium=Schizachyrium.scoparium, Solidago.rigida=Solidago.rigida, Sorghastrum.nutans=Sorghastrum.nutans, C.3=C.3, C.4=C.4, Forb=Forb, Legume=Legume, legume_spp=legume_spp, legume_num=legume_num, leg_num_spp=leg_num_spp, trt=trt, spp_trt=spp_trt), FUN=sum))
-names(anppSum)[names(anppSum)=="x"] <- "total_biomass"
-
-#merge monoculture averages with polyculture data
-anppRY <- merge(anppSum, anppMonoAvgWide, all=T)
+RYT <- anppPoly %>% 
+  group_by(plot, ring, CO2_trt, N_trt, spp_count, group_count, experiment, monospecies, monogroup, year) %>% 
+  summarise(RYT=sum(RY), #calculate RYT
+            total_anpp=sum(anpp)) %>% #calculate total anpp per plot 
+  ungroup()
 
 
 ###aside to get RY for ESA 2017 talk
