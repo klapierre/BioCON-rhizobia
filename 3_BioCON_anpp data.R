@@ -5,10 +5,16 @@
 ################################################################################
 
 # library(boot)
+library(grid)
+library(nlme) 
+library(lsmeans)
 library(tidyverse)
 
 setwd('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\NSF BioCON rhizobia\\data\\BioCON data')
 
+#### Source home-built functions ####
+source('C:\\Users\\kjkomatsu\\Desktop\\R files\\general-R-code\\bar graph summary stats.r', chdir=T)
+source('C:\\Users\\kjkomatsu\\Desktop\\R files\\general-R-code\\ggplot_theme set.r', chdir=T)
 
 #### Source treatment data ####
 source('C:\\Users\\kjkomatsu\\Desktop\\R files\\BioCON-rhizobia\\1_BioCON_treatment data.r', chdir=T)
@@ -68,76 +74,67 @@ anppPoly <- anpp %>%
   #calculate relative yield for each species
   mutate(RY=ifelse(spp_count==4, anpp/(mono_anpp_mean/4),
             ifelse(spp_count==9, anpp/(mono_anpp_mean/9),
-                   anpp/(mono_anpp_mean/16))))
+                   anpp/(mono_anpp_mean/16)))) %>% 
+  left_join(trt)
 
+#calculate Relative Yield Total and total anpp per plot
 RYT <- anppPoly %>% 
   group_by(plot, ring, CO2_trt, N_trt, spp_count, group_count, experiment, monospecies, monogroup, year) %>% 
   summarise(RYT=sum(RY), #calculate RYT
             total_anpp=sum(anpp)) %>% #calculate total anpp per plot 
-  ungroup()
+  ungroup() %>% 
+  left_join(trt)
+
+#check RYT and total anpp for normality within plots
+shapiro.test(anppPoly$RY)
+qqnorm(anppPoly$RY)
+
+shapiro.test(RYT$RYT)
+qqnorm(RYT$RYT)
+
+shapiro.test(RYT$total_anpp)
+qqnorm(RYT$total_anpp)
+
+#log10 transform for normality
+anppPoly$logRY <- log10(anppPoly$RY)
+shapiro.test(anppPoly$logRY)
+qqnorm(anppPoly$logRY)
+
+RYT$logRYT <- log10(RYT$RYT)
+shapiro.test(RYT$logRYT)
+qqnorm(RYT$logRYT)
+
+RYT$log_total_anpp <- log10(RYT$total_anpp)
+shapiro.test(RYT$log_total_anpp)
+qqnorm(RYT$log_total_anpp)
 
 
-###aside to get RY for ESA 2017 talk
-#calculate RY for years that biomass was sorted to species; **this is for monoculture yield compared to polyculture yield**
-#only do 2005, as this is last year before biomass not sorted to species
-anppRY05 <- anppRY%>%
-  filter(year==2005, monogroup=='Legume')%>%
-  left_join(anpp)%>%
-  mutate(AMCA_RY=AMCA/(0.25*AMCAmono), LECA_RY=LECA/(0.25*LECAmono), LUPE_RY=LUPE/(0.25*LUPEmono), PEVI_RY=PEVI/(0.25*PEVImono))%>%
-  select(year, CO2_trt, N_trt, trt, plot, ring, AMCA_RY, LECA_RY, LUPE_RY, PEVI_RY)%>%
-  gather(key=spp, value=RY, AMCA_RY:PEVI_RY)
+#### Choose data subset ####
+anppPolySubset <- subset(anppPoly, trt=='Camb_Namb' & year==2005)
+RYTSubset <- subset(RYT, trt=='Camb_Namb' & year==2005)
 
-#boostrap RY values
-RYfunction <- function(d, i){
-  d2 <- d[i,]
-  return(d2$RY)
-}
 
-#AMCA
-amcaBio <- subset(anppRY05, subset=(spp=='AMCA_RY' & trt=='Camb_Namb'))
-amcaRYBootModel <- boot(amcaBio, RYfunction, R=1000)
-plot(amcaRYBootModel)
-amcaRYBoot <- as.data.frame(amcaRYBootModel$t)
-amcaRYBootMean <- as.data.frame(rowMeans(amcaRYBoot[1:1000,]))%>%
-  mutate(spp='AMCA')
-names(amcaRYBootMean)[names(amcaRYBootMean) == 'rowMeans(amcaRYBoot[1:1000, ])'] <- 'RY'
-
-#LECA
-lecaBio <- subset(anppRY05, subset=(spp=='LECA_RY' & trt=='Camb_Namb'))
-lecaRYBootModel <- boot(lecaBio, RYfunction, R=1000)
-plot(lecaRYBootModel)
-lecaRYBoot <- as.data.frame(lecaRYBootModel$t)
-lecaRYBootMean <- as.data.frame(rowMeans(lecaRYBoot[1:1000,]))%>%
-  mutate(spp='LECA')
-names(lecaRYBootMean)[names(lecaRYBootMean) == 'rowMeans(lecaRYBoot[1:1000, ])'] <- 'RY'
-
-#LUPE
-lupeBio <- subset(anppRY05, subset=(spp=='LUPE_RY' & trt=='Camb_Namb'))
-lupeRYBootModel <- boot(lupeBio, RYfunction, R=1000)
-plot(lupeRYBootModel)
-lupeRYBoot <- as.data.frame(lupeRYBootModel$t)
-lupeRYBootMean <- as.data.frame(rowMeans(lupeRYBoot[1:1000,]))%>%
-  mutate(spp='LUPE')
-names(lupeRYBootMean)[names(lupeRYBootMean) == 'rowMeans(lupeRYBoot[1:1000, ])'] <- 'RY'
-
-#combine spp specializations
-allSpecializationBoot <- rbind(amcaRYBootMean, lecaRYBootMean, lupeRYBootMean)%>%
-  group_by(spp)%>%
-  summarize(RY_mean=mean(RY), RY_sd=sd(RY))%>%
-  ungroup()%>%
-  mutate(RY_CI=1.96*RY_sd)
+#### Statistical Models - Relative Yield of legumes only ####
+#note: subset only 2005 because that is the last year the plots were sorted to species in the dataset; drop Petalostemum because we don't have pot experiment data for that species (and it grows poorly in the plots as well)
+summary(RY4spp <- lme(logRY ~ species2,
+                  random=~1|plot,
+                  data=anppPolySubset))
+anova(RY4spp)
+lsmeans(RY4spp, ~species2)
 
 #plot rhizobial specialization
-ggplot(data=allSpecializationBoot, aes(x=spp, y=RY_mean, fill=spp)) +
+ggplot(data=barGraphStats(data=subset(anppPoly, monogroup=='Legume' & trt=='Camb_Namb' & year==2005 & species2!='Petalostemum villosum'), 
+                          variable="RY", byFactorNames=c("species2")),
+       aes(x=species2, y=mean, fill=species2)) +
   geom_bar(stat='identity') +
-  geom_errorbar(aes(ymin=RY_mean-RY_CI, ymax=RY_mean+RY_CI), width=0.2) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0.2) +
   geom_hline(aes(yintercept=1), linetype="dashed") +
   xlab('Legume Species') +
   ylab('Relative Yield in Field') +
   annotate('text', x=1, y=0.7, label='a', size=10) +
   annotate('text', x=2, y=0.6, label='a', size=10) +
   annotate('text', x=3, y=3, label='b', size=10) +
-  scale_fill_manual(values=c('#00760a', '#00760a', '#e46c0a'), breaks=c('AMCA', 'LUPE'), labels=c('specialist', 'generalist'))
+  scale_fill_manual(values=c('#00760a', '#00760a', '#e46c0a'), breaks=c('Amorpha canescens','Lespedeza capitata', 'Lupinus perennis'), labels=c('specialist', 'specialist', 'generalist'))
 #export at 700x500
 
 
@@ -242,43 +239,6 @@ ggplot(data=allSpecializationBoot, aes(x=spp, y=RY_mean, fill=spp)) +
 
 
 
-###continues
-#calculate expected yield from monoculture biomass
-anppRY$ACMImono2 <- with(anppRY, ifelse(Achillea.millefolium==1, ACMImono, 0))
-anppRY$AGREmono2 <- with(anppRY, ifelse(Agropyron.repens==1, AGREmono, 0))
-anppRY$AMCAmono2 <- with(anppRY, ifelse(Amorpha.canescens==1, AMCAmono, 0))
-anppRY$ANGEmono2 <- with(anppRY, ifelse(Andropogon.gerardi==1, ANGEmono, 0))
-anppRY$ANCYmono2 <- with(anppRY, ifelse(Anemone.cylindrica==1, ANCYmono, 0))
-anppRY$ANCYmono2[is.na(anppRY$ANCYmono2)] <- 0
-anppRY$ASTUmono2 <- with(anppRY, ifelse(Asclepias.tuberosa==1, ASTUmono, 0))
-anppRY$BOGRmono2 <- with(anppRY, ifelse(Bouteloua.gracilis==1, BOGRmono, 0))
-anppRY$BRINmono2 <- with(anppRY, ifelse(Bromus.inermis==1, BRINmono, 0))
-anppRY$KOCRmono2 <- with(anppRY, ifelse(Koeleria.cristata==1, KOCRmono, 0))
-anppRY$LECAmono2 <- with(anppRY, ifelse(Lespedeza.capitata==1, LECAmono, 0))
-anppRY$LUPEmono2 <- with(anppRY, ifelse(Lupinus.perennis==1, LUPEmono, 0))
-anppRY$PEVImono2 <- with(anppRY, ifelse(Petalostemum.villosum==1, PEVImono, 0))
-anppRY$POPRmono2 <- with(anppRY, ifelse(Poa.pratensis==1, POPRmono, 0))
-anppRY$SCSCmono2 <- with(anppRY, ifelse(Schizachyrium.scoparium==1, SCSCmono, 0))
-anppRY$SORImono2 <- with(anppRY, ifelse(Solidago.rigida==1, SORImono, 0))
-anppRY$SONUmono2 <- with(anppRY, ifelse(Sorghastrum.nutans==1, SONUmono, 0))
-anppRY$exp_yield <- with(anppRY, ifelse(spp_count==4, (ACMImono2+AGREmono2+AMCAmono2+ANGEmono2+ANCYmono2+ASTUmono2+BOGRmono2+BRINmono2+KOCRmono2+LECAmono2+LUPEmono2+PEVImono2+POPRmono2+SCSCmono2+SORImono2+SONUmono2)/4, 
-                                        ifelse(spp_count==9, (ACMImono2+AGREmono2+AMCAmono2+ANGEmono2+ANCYmono2+ASTUmono2+BOGRmono2+BRINmono2+KOCRmono2+LECAmono2+LUPEmono2+PEVImono2+POPRmono2+SCSCmono2+SORImono2+SONUmono2)/9, (ACMImono2+AGREmono2+AMCAmono2+ANGEmono2+ANCYmono2+ASTUmono2+BOGRmono2+BRINmono2+KOCRmono2+LECAmono2+LUPEmono2+PEVImono2+POPRmono2+SCSCmono2+SORImono2+SONUmono2)/16)))
-
-#calculate relative yield total
-anppRY$RYT <- with(anppRY, total_biomass/exp_yield)
-
-#check RYT for normality within plots
-shapiro.test(anppRY$RYT)
-qqnorm(anppRY$RYT)
-
-#make normal
-anppRY$logRYT <- log10(anppRY$RYT)
-shapiro.test(anppRY$logRYT)
-qqnorm(anppRY$logRYT)
-
-# anppRY$sqrtRYT <- sqrt(anppRY$RYT)
-# shapiro.test(anppRY$sqrtRYT)
-# qqnorm(anppRY$sqrtRYT)
 
 ##############################################
 ##############################################
