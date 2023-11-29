@@ -24,4 +24,4 @@ trt <- read.csv('e141_treatments.csv') %>%
                                   ifelse(legume_num==3, '3 legumes',
                                   ifelse(legume_num==4, '4 legumes', '0 legumes'))))))))) %>% 
   #making a combined CO2 and N treatment column
-  mutate(trt=paste(trt$CO2_trt, trt$N_trt, sep='_'))
+  mutate(trt=paste(CO2_trt, N_trt, sep='_'))
