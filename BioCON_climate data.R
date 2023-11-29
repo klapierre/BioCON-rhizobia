@@ -1,12 +1,4 @@
-################################################################################
-##  2_BioCON_climate data.R: Gathering and summarizing climate data from Cedar Creek.
-##
-##  Author: Kimberly Komatsu
-################################################################################
-
 setwd('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\NSF BioCON rhizobia\\data\\BioCON data')
-
-library(tidyverse)
 
 ##### Read in climate data ####
 climate <- read.csv('e080_Daily climate summary_2023.csv') %>% 
