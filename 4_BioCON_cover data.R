@@ -1,167 +1,166 @@
-library(plyr)
-library(reshape2)
+################################################################################
+##  4_BioCON_cover data.R: Structuring cover data from BioCON experimental plots.
+##
+##  Author: Kimberly Komatsu
+################################################################################
+
 library(car)
+library(tidyverse)
+
 
 setwd('C:\\Users\\kjkomatsu\\OneDrive - UNCG\\NSF BioCON rhizobia\\data\\BioCON data')
 
-source('C:\\Users\\kjkomatsu\\Desktop\\R files\\BioCON-rhizobia\\BioCON_treatment data.R', chdir=T)
-source('C:\\Users\\kjkomatsu\\Desktop\\R files\\BioCON-rhizobia\\BioCON_anpp data.R', chdir=T)
+#### Source home-built functions ####
+source('C:\\Users\\kjkomatsu\\Desktop\\R files\\general-R-code\\bar graph summary stats.r', chdir=T)
+source('C:\\Users\\kjkomatsu\\Desktop\\R files\\general-R-code\\ggplot_theme set.r', chdir=T)
+
+#### Source anpp data ####
+source('C:\\Users\\kjkomatsu\\Desktop\\R files\\BioCON-rhizobia\\3_BioCON_anpp data.r', chdir=T)
+
+#cleanup
+rm(list=setdiff(ls(), "anpp"))
+
+#### Source treatment data ####
+source('C:\\Users\\kjkomatsu\\Desktop\\R files\\BioCON-rhizobia\\1_BioCON_treatment data.r', chdir=T)
 
 #cover data
-coverAll <- read.csv('e141_plant species percent cover.csv')
+cover <- read.table('e141_Plant species percent cover data_1999-2019.txt', sep="\t", header=TRUE) %>%
+  rename(plot=Plot, ring=Ring, year=Year) %>% 
+  select(-Sampling.number, -CO2.Treatment, -Nitrogen.Treatment, -CountOfSpecies, -CountOfGroup, -Experiment, -Monospecies, -Monogroup) %>% 
+  #convert date column to something useful
+  left_join(trt) %>% 
+  #remove trailing spaces, fixing capitalization, replacing . with space
+  mutate(Species=str_squish(Species),
+         Species=str_to_sentence(Species)) %>% 
+  #remove non-vascular and dead biomass
+  filter(!(Species %in% c('Moss', 'Oak leaves', 'Mushrooms', 'Mushroom', 'Bareground', 'Bare ground', 'Mosses & lichens', 'Miscellaneous litter', 'Micellaneous litter', 'Miscelaneous liter', 'Miscellaneous llitter', 'Fungi', ''))) %>% 
+  filter(Percent.cover>0) %>% 
+  #rename species to other if not one of the focal species for the given plot
+  rowwise() %>% 
+  mutate(species2=ifelse(grepl(Species, spp_trt), Species, "other")) %>% 
+  #drop 0 spp plots and terraCON plots
+  filter(spp_count>0,
+         !(Water.Treatment %in% c('H2Oamb','H2Oneg')),
+         !(Temp.Treatment %in% c('HTamb','HTelev'))) %>% 
+  #get max value across spring and fall clipping
+  group_by(plot, ring, CO2_trt, N_trt, spp_count, group_count, experiment, monospecies, monogroup, year, species2) %>% 
+  summarise(cover=max(Percent.cover)) %>% 
+  ungroup()
 
-#remove the water and temperature treatment plots
-coverWater <- subset(coverAll, subset=(water_trt!='H2Oamb' & water_trt!='H2Oneg'))
 
-#remove all but the 16 species cover
-cover16 <- coverWater[(coverWater$species %in% c("Achillea millefolium","Asclepias tuberosa",
-                                             "Koeleria cristata","Lupinus perennis","Poa pratensis",
-                                             "Sorghastrum nutans","Agropyron repens","Andropogon gerardi",
-                                             "Bromus inermis","Petalostemum villosum","Amorpha canescens",
-                                             "Bouteloua gracilis","Schizachyrium scoparium", "Solidago rigida",
-                                             "Anemone cylindrica", "Lespedeza capitata")),]
-
-#get max per year (across spring and fall)
-coverMax <- ddply(cover16, c('year', 'plot', 'ring', 'CO2_trt', 'N_trt', 'spp_count', 'group_count', 'experiment', 'monospecies', 'monogroup', 'species'), summarise, cover=max(cover))
-
-coverMax$species <- as.factor(coverMax$species)
-
-#make anpp species names match cover species names
-anppMax$species <- as.factor(with(anppMax, ifelse(species=='Achillea.millefolium', 'Achillea millefolium',
-                                 ifelse(species=='Agropyron.repens', 'Agropyron repens',
-                                 ifelse(species=='Amorpha.canescens', 'Amorpha canescens',
-                                 ifelse(species=='Andropogon.gerardi', 'Andropogon gerardi',
-                                 ifelse(species=='Anemone.cylindrica', 'Anemone cylindrica',
-                                 ifelse(species=='Asclepias.tuberosa', 'Asclepias tuberosa',
-                                 ifelse(species=='Bouteloua.gracilis', 'Bouteloua gracilis',
-                                 ifelse(species=='Bromus.inermis', 'Bromus inermis',
-                                 ifelse(species=='Koeleria.cristata', 'Koeleria cristata',
-                                 ifelse(species=='Lespedeza.capitata', 'Lespedeza capitata',
-                                 ifelse(species=='Lupinus.perennis', 'Lupinus perennis',
-                                 ifelse(species=='Petalostemum.villosum', 'Petalostemum villosum',
-                                 ifelse(species=='Poa.pratensis', 'Poa pratensis',
-                                 ifelse(species=='Schizachyrium.scoparium', 'Schizachyrium scoparium',
-                                 ifelse(species=='Solidago.rigida', 'Solidago rigida', 'Sorghastrum nutans')))))))))))))))))
-
-#merge cover and anpp
-coverANPP <- merge(coverMax, anppMax, by=c('year', 'plot', 'ring', 'CO2_trt', 'N_trt', 'spp_count', 'group_count', 'experiment', 'monospecies', 'monogroup', 'species'))
+#### Merge cover and anpp to test correlations ####
+coverANPP <- cover %>% 
+  left_join(anpp)
 
 #linear model comparing cover and ANPP across species
-coverANPPmodel <- lm(anpp~cover, data=coverANPP)
+summary(coverANPPmodel <- lm(anpp~cover, data=coverANPP))
 outlierTest(coverANPPmodel)
-summary(coverANPPmodel)
 plot(coverANPP$anpp~coverANPP$cover)
 
 #subset each species
-coverANPPacmi <- subset(coverANPP, species=='Achillea millefolium')
+coverANPPacmi <- subset(coverANPP, species2=='Achillea millefolium')
 coverANPPacmiModel <- lm(anpp~cover, data=coverANPPacmi)
 outlierTest(coverANPPacmiModel)
 summary(coverANPPacmiModel)
 plot(coverANPPacmi$anpp~coverANPPacmi$cover)
 
-coverANPPastu <- subset(coverANPP, species=='Asclepias tuberosa')
+coverANPPastu <- subset(coverANPP, species2=='Asclepias tuberosa')
 coverANPPastuModel <- lm(anpp~cover, data=coverANPPastu)
 outlierTest(coverANPPastuModel)
 summary(coverANPPastuModel)
 plot(coverANPPastu$anpp~coverANPPastu$cover)
 
-coverANPPkocr <- subset(coverANPP, species=='Koeleria cristata')
+coverANPPkocr <- subset(coverANPP, species2=='Koeleria cristata')
 coverANPPkocrModel <- lm(anpp~cover, data=coverANPPkocr)
 outlierTest(coverANPPkocrModel)
 summary(coverANPPkocrModel)
 plot(coverANPPkocr$anpp~coverANPPkocr$cover)
 
-coverANPPlupe <- subset(coverANPP, species=='Lupinus perennis')
+coverANPPlupe <- subset(coverANPP, species2=='Lupinus perennis')
 coverANPPlupeModel <- lm(anpp~cover, data=coverANPPlupe)
 outlierTest(coverANPPlupeModel)
 summary(coverANPPlupeModel)
 plot(coverANPPlupe$anpp~coverANPPlupe$cover)
 
-coverANPPpopr <- subset(coverANPP, species=='Poa pratensis')
+coverANPPpopr <- subset(coverANPP, species2=='Poa pratensis')
 coverANPPpoprModel <- lm(anpp~cover, data=coverANPPpopr)
 outlierTest(coverANPPpoprModel)
 summary(coverANPPpoprModel)
 plot(coverANPPpopr$anpp~coverANPPpopr$cover)
 
-coverANPPsonu <- subset(coverANPP, species=='Sorghastrum nutans') #NOTE: very poor fit
+coverANPPsonu <- subset(coverANPP, species2=='Sorghastrum nutans') #NOTE: very poor fit
 coverANPPsonuModel <- lm(anpp~cover, data=coverANPPsonu)
 outlierTest(coverANPPsonuModel)
 summary(coverANPPsonuModel)
 plot(coverANPPsonu$anpp~coverANPPsonu$cover)
 
-coverANPPagre <- subset(coverANPP, species=='Agropyron repens')
+coverANPPagre <- subset(coverANPP, species2=='Agropyron repens')
 coverANPPagreModel <- lm(anpp~cover, data=coverANPPagre)
 outlierTest(coverANPPagreModel)
 summary(coverANPPagreModel)
 plot(coverANPPagre$anpp~coverANPPagre$cover)
 
-coverANPPange <- subset(coverANPP, species=='Andropogon gerardi')
+coverANPPange <- subset(coverANPP, species2=='Andropogon gerardi')
 coverANPPangeModel <- lm(anpp~cover, data=coverANPPange)
 outlierTest(coverANPPangeModel)
 summary(coverANPPangeModel)
 plot(coverANPPange$anpp~coverANPPange$cover)
 
-coverANPPbrin <- subset(coverANPP, species=='Bromus inermis')
+coverANPPbrin <- subset(coverANPP, species2=='Bromus inermis')
 coverANPPbrinModel <- lm(anpp~cover, data=coverANPPbrin)
 outlierTest(coverANPPbrinModel)
 summary(coverANPPbrinModel)
 plot(coverANPPbrin$anpp~coverANPPbrin$cover)
 
-coverANPPpevi <- subset(coverANPP, species=='Petalostemum villosum')
+coverANPPpevi <- subset(coverANPP, species2=='Petalostemum villosum')
 coverANPPpeviModel <- lm(anpp~cover, data=coverANPPpevi)
 outlierTest(coverANPPpeviModel)
 summary(coverANPPpeviModel)
 plot(coverANPPpevi$anpp~coverANPPpevi$cover)
 
-coverANPPamca <- subset(coverANPP, species=='Amorpha canescens')
+coverANPPamca <- subset(coverANPP, species2=='Amorpha canescens')
 coverANPPamcaModel <- lm(anpp~cover, data=coverANPPamca)
 outlierTest(coverANPPamcaModel)
 summary(coverANPPamcaModel)
 plot(coverANPPamca$anpp~coverANPPamca$cover)
 
-coverANPPbogr <- subset(coverANPP, species=='Bouteloua gracilis')
+coverANPPbogr <- subset(coverANPP, species2=='Bouteloua gracilis')
 coverANPPbogrModel <- lm(anpp~cover, data=coverANPPbogr)
 outlierTest(coverANPPbogrModel)
 summary(coverANPPbogrModel)
 plot(coverANPPbogr$anpp~coverANPPbogr$cover)
 
-coverANPPscsc <- subset(coverANPP, species=='Schizachyrium scoparium')
+coverANPPscsc <- subset(coverANPP, species2=='Schizachyrium scoparium')
 coverANPPscscModel <- lm(anpp~cover, data=coverANPPscsc)
 outlierTest(coverANPPscscModel)
 summary(coverANPPscscModel)
 plot(coverANPPscsc$anpp~coverANPPscsc$cover)
 
-coverANPPsori <- subset(coverANPP, species=='Solidago rigida')
+coverANPPsori <- subset(coverANPP, species2=='Solidago rigida')
 coverANPPsoriModel <- lm(anpp~cover, data=coverANPPsori)
 outlierTest(coverANPPsoriModel)
 summary(coverANPPsoriModel)
 plot(coverANPPsori$anpp~coverANPPsori$cover)
 
-coverANPPancy <- subset(coverANPP, species=='Anemone cylindrica')
+coverANPPancy <- subset(coverANPP, species2=='Anemone cylindrica')
 coverANPPancyModel <- lm(anpp~cover, data=coverANPPancy)
 outlierTest(coverANPPancyModel)
 summary(coverANPPancyModel)
 plot(coverANPPancy$anpp~coverANPPancy$cover)
 
-coverANPPleca <- subset(coverANPP, species=='Lespedeza capitata')
+coverANPPleca <- subset(coverANPP, species2=='Lespedeza capitata')
 coverANPPlecaModel <- lm(anpp~cover, data=coverANPPleca)
 outlierTest(coverANPPlecaModel)
 summary(coverANPPlecaModel)
 plot(coverANPPleca$anpp~coverANPPleca$cover)
 
 #total cover and anpp
-coverANPPtotal <- ddply(coverANPP, c('year', 'plot', 'ring', 'CO2_trt', 'N_trt', 'spp_count', 'group_count', 'monospecies', 'monospecies'), summarise,
-                        anpp_total=mean(anpp),
-                        cover_total=mean(cover))
+coverANPPtotal <- coverANPP %>% 
+  group_by(year, plot, ring, CO2_trt, N_trt, spp_count, group_count, monogroup, monospecies) %>% 
+  summarise(anpp_total=sum(anpp),
+            cover_total=sum(cover)) %>% 
+  ungroup()
 
 coverANPPtotalModel <- lm(anpp_total~cover_total, data=coverANPPtotal)
 summary(coverANPPtotalModel)
 plot(coverANPPtotal$anpp_total~coverANPPtotal$cover_total)
-
-
-
-
-
-
-
-
