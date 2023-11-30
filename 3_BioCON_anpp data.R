@@ -47,8 +47,8 @@ anpp <- read.table('e141_Plant aboveground biomass data_1998-2020.txt', sep="\t"
          !(Water.Treatment. %in% c('H2Oamb','H2Oneg')),
          !(Temp.Treatment. %in% c('HTamb','HTelev'))) %>% 
   #get max value across spring and fall clipping
-  group_by(plot, ring, CO2_trt, N_trt, spp_count, group_count, experiment, monospecies, monogroup, year, species2) %>% 
-  summarise(anpp=max(Aboveground.Biomass..g.m.2.)) %>% 
+  group_by(plot, ring, CO2_trt, N_trt, spp_count, group_count, experiment, monospecies, monogroup, year, species2) %>%
+  summarise(anpp=max(Aboveground.Biomass..g.m.2.)) %>%
   ungroup()
 
 
@@ -147,17 +147,17 @@ summary(RYmodel <- lme(log10(RY) ~ species2,
 anova(RYmodel)
 lsmeans(RYmodel, ~species2)
 
-# #plot rhizobial specialization by year
-# ggplot(data=barGraphStats(data=subset(anppPolySubset, monogroup=='Legume' &
-#                                         species2 %in% c('Amorpha canescens','Lespedeza capitata','Lupinus perennis')), 
-#                           variable="RY", byFactorNames=c("year", "species2")),
-#        aes(x=year, y=mean, color=species2)) +
-#   geom_point() +
-#   geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0.2) +
-#   geom_hline(aes(yintercept=1), linetype="dashed") +
-#   xlab('Year') +
-#   ylab('Relative Yield in Field')
-# 
+#plot rhizobial specialization by year
+ggplot(data=barGraphStats(data=subset(anppPolySubset, monogroup=='Legume' &
+                                        species2 %in% c('Amorpha canescens','Lespedeza capitata','Lupinus perennis')),
+                          variable="RY", byFactorNames=c("year", "species2")),
+       aes(x=year, y=mean, color=species2)) +
+  geom_point() +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0.2) +
+  geom_hline(aes(yintercept=1), linetype="dashed") +
+  xlab('Year') +
+  ylab('Relative Yield in Field')
+
 ggplot(data=barGraphStats(data=subset(anppPolySubset, monogroup=='Legume' & year==2005 &
                                       species2 %in% c('Amorpha canescens','Lespedeza capitata','Lupinus perennis')),
                           variable="RY", byFactorNames=c("species2")),
