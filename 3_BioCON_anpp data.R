@@ -85,6 +85,17 @@ anppExpected <- sppList %>%
   summarize(expected_biomass=sum(expected_spp_biomass)) %>% 
   ungroup()
 
+anppPoly <- anpp %>% 
+  select(plot, ring, year, CO2_trt, N_trt, species2, spp_count, anpp) %>% 
+  filter(spp_count>1) %>% 
+  right_join(anppMono) %>% 
+  #calculate relative yield for each species
+  mutate(expected_spp_biomass=ifelse(spp_count==4, mono_anpp_mean/4,
+                                     ifelse(spp_count==9, mono_anpp_mean/9,
+                                            mono_anpp_mean/16))) %>% 
+  mutate(RY=(anpp/expected_spp_biomass)) %>% 
+  left_join(trt)
+
 #calculate Relative Yield Total and total anpp per plot
 RYT <- anpp %>% 
   filter(spp_count>1) %>% 
@@ -126,7 +137,7 @@ RYTSubset <- subset(RYT, trt=='Camb_Namb')
 
 #### Statistical Models - Relative Yield of legumes only ####
 #note: subset only 2005 because that is the last year the plots were sorted to species in the dataset; drop Petalostemum because we don't have pot experiment data for that species (and it grows poorly in the plots as well)
-summary(RYmodel <- lme(log(RY) ~ species2,
+summary(RYmodel <- lme(log10(RY) ~ species2,
                        random=~1|plot,
                        data=subset(anppPolySubset, year==2005 &
                                      species2 %in% c('Amorpha canescens', 
