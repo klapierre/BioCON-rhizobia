@@ -208,84 +208,98 @@ ggplot(data=barGraphStats(data=subset(RYTSubset, legume_num %in% c(0,1,4) & spp_
 #export at 700x500
 
 
-# ###################################################################################
-# #### Run on full dataset and include spp_count and CO2/N trt as random factors ####
-# ###################################################################################
-# 
-# #NOTE: trts and spp counts are too different to compare
-# 
-# #### Statistical Models - Relative Yield of legumes only ####
-# #note: subset only 2005 because that is the last year the plots were sorted to species in the dataset; drop Petalostemum because we don't have pot experiment data for that species (and it grows poorly in the plots as well)
-# summary(RYmodel <- lme(log10(RY) ~ species2*trt*spp_count,
-#                        random=~1|year/plot,
-#                        data=subset(anppPoly, species2 %in% c('Amorpha canescens',
-#                                                              'Lespedeza capitata',
-#                                                              'Lupinus perennis') &
-#                                    !is.na(RY) & RY>0)))
-# anova(RYmodel)
-# lsmeans(RYmodel, ~species2)
-# 
-# # #plot rhizobial specialization by year
-# # ggplot(data=barGraphStats(data=subset(anppPolySubset, monogroup=='Legume' &
-# #                                         species2 %in% c('Amorpha canescens','Lespedeza capitata','Lupinus perennis')), 
-# #                           variable="RY", byFactorNames=c("year", "species2")),
-# #        aes(x=year, y=mean, color=species2)) +
-# #   geom_point() +
-# #   geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0.2) +
-# #   geom_hline(aes(yintercept=1), linetype="dashed") +
-# #   xlab('Year') +
-# #   ylab('Relative Yield in Field')
-# # 
-# ggplot(data=barGraphStats(data=subset(anppPoly, spp_count<16 & #year==2005 & #monogroup=='Legume' & 
-#                                         species2 %in% c('Amorpha canescens',
-#                                                         'Lespedeza capitata',
-#                                                         'Lupinus perennis')),
-#                           variable="RY", byFactorNames=c("species2","trt","spp_count")),
-#        aes(x=species2, y=mean, fill=species2)) +
-#   geom_bar(stat='identity') +
-#   geom_errorbar(aes(ymin=mean-1.96*se, ymax=mean+1.96*se), width=0.2) +
+###################################################################################
+#### Run on full dataset and include spp_count and CO2/N trt as random factors ####
+###################################################################################
+
+#NOTE: trts and spp counts are too different to compare
+
+#### Statistical Models - Relative Yield of legumes only ####
+#note: subset only 2005 because that is the last year the plots were sorted to species in the dataset; drop Petalostemum because we don't have pot experiment data for that species (and it grows poorly in the plots as well)
+summary(RYmodel <- lme(log10(RY) ~ species2*trt*spp_count,
+                       random=~1|year/plot,
+                       data=subset(anppPoly, species2 %in% c('Amorpha canescens',
+                                                             'Lespedeza capitata',
+                                                             'Lupinus perennis') &
+                                   !is.na(RY) & RY>0 & spp_count<16)))
+anova(RYmodel)
+lsmeans(RYmodel, ~species2)
+# effect of species2 interacts with both plot spp count and CO2/N trt
+
+# #plot rhizobial specialization by year
+# ggplot(data=barGraphStats(data=subset(anppPolySubset, monogroup=='Legume' &
+#                                         species2 %in% c('Amorpha canescens','Lespedeza capitata','Lupinus perennis')),
+#                           variable="RY", byFactorNames=c("year", "species2")),
+#        aes(x=year, y=mean, color=species2)) +
+#   geom_point() +
+#   geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0.2) +
 #   geom_hline(aes(yintercept=1), linetype="dashed") +
-#   xlab('Legume Species') +
-#   ylab('Relative Yield in Field') +
-#   annotate('text', x=1, y=0.8, label='a', size=10) +
-#   annotate('text', x=2, y=0.78, label='a', size=10) +
-#   annotate('text', x=3, y=3.6, label='b', size=10) +
-#   scale_x_discrete(breaks=c('Amorpha canescens','Lespedeza capitata', 'Lupinus perennis'), labels=c('AMCA', 'LECA', 'LUPE')) +
-#   scale_fill_manual(values=c('#00760a', '#00760a', '#e46c0a'), breaks=c('Amorpha canescens','Lespedeza capitata', 'Lupinus perennis'), labels=c('specialist', 'specialist', 'generalist')) +
-#   facet_grid(rows=vars(as.factor(spp_count)), cols=vars(trt))
-# #export at 700x500
-# 
-# 
-# #### Statistical Models - Relative Yield Total ####
-# #note: subset only 2005 because that is the last year the plots were sorted to species in the dataset
-# 
-# #4 spp polycultures only
-# summary(RYTmodel <- lme(log10(RYT) ~ as.factor(legume_num),
-#                         random=~1|year/plot,
-#                         data=subset(RYT, spp_count==4 & trt=='Camb_Namb' #& legume_num %in% c(0,1,4)
-#                                     )))
-# anova(RYTmodel)
-# lsmeans(RYTmodel, ~legume_num)
-# 
-# # #plot rhizobial specialization by year
-# # ggplot(data=barGraphStats(data=subset(RYTSubset, legume_num %in% c(0,1,4) & spp_count==4),
-# #                           variable="RYT", byFactorNames=c("year", "legume_num")),
-# #        aes(x=year, y=mean, color=as.factor(legume_num))) +
-# #   geom_point(position=position_dodge(0.9)) +
-# #   geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0.2, position=position_dodge(0.9)) +
-# #   geom_hline(aes(yintercept=1), linetype="dashed") +
-# #   xlab('Year') +
-# #   ylab('Relative Yield in Field')
-# 
-# ggplot(data=barGraphStats(data=subset(RYT, spp_count<16), variable="RYT", byFactorNames=c("legume_num", "spp_count", "trt")),
-#        aes(x=as.factor(legume_num), y=mean)) +
-#   geom_bar(stat='identity') +
-#   geom_errorbar(aes(ymin=mean-1.96*se, ymax=mean+1.96*se), width=0.2) +
+#   xlab('Year') +
+#   ylab('Relative Yield in Field')
+#
+ggplot(data=barGraphStats(data=subset(anppPoly, spp_count<16 & #year==2005 & #monogroup=='Legume' &
+                                        species2 %in% c('Amorpha canescens',
+                                                        'Lespedeza capitata',
+                                                        'Lupinus perennis')),
+                          variable="RY", byFactorNames=c("species2","trt","spp_count")),
+       aes(x=species2, y=mean, fill=species2)) +
+  geom_bar(stat='identity') +
+  geom_errorbar(aes(ymin=mean-1.96*se, ymax=mean+1.96*se), width=0.2) +
+  geom_hline(aes(yintercept=1), linetype="dashed") +
+  xlab('Legume Species') +
+  ylab('Relative Yield in Field') +
+  annotate('text', x=1, y=0.8, label='a', size=10) +
+  annotate('text', x=2, y=0.78, label='a', size=10) +
+  annotate('text', x=3, y=3.6, label='b', size=10) +
+  scale_x_discrete(breaks=c('Amorpha canescens','Lespedeza capitata', 'Lupinus perennis'), labels=c('AMCA', 'LECA', 'LUPE')) +
+  scale_fill_manual(values=c('#00760a', '#00760a', '#e46c0a'), breaks=c('Amorpha canescens','Lespedeza capitata', 'Lupinus perennis'), labels=c('specialist', 'specialist', 'generalist')) +
+  facet_grid(rows=vars(as.factor(spp_count)), cols=vars(trt))
+#export at 700x500
+
+
+#### Statistical Models - Relative Yield Total ####
+#note: subset only 2005 because that is the last year the plots were sorted to species in the dataset
+
+#4 spp polycultures only
+summary(RYTmodel <- lme(log10(RYT) ~ as.factor(legume_num),
+                        random=~1|year/plot,
+                        data=subset(RYT, spp_count==4 & trt=='Camb_Namb' #& legume_num %in% c(0,1,4)
+                                    )))
+anova(RYTmodel)
+lsmeans(RYTmodel, ~legume_num)
+
+# #plot rhizobial specialization by year
+# ggplot(data=barGraphStats(data=subset(RYTSubset, legume_num %in% c(0,1,4) & spp_count==4),
+#                           variable="RYT", byFactorNames=c("year", "legume_num")),
+#        aes(x=year, y=mean, color=as.factor(legume_num))) +
+#   geom_point(position=position_dodge(0.9)) +
+#   geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0.2, position=position_dodge(0.9)) +
 #   geom_hline(aes(yintercept=1), linetype="dashed") +
-#   xlab('Legume Number') +
-#   ylab('Relative Yield Total') +
-#   annotate('text', x=1, y=2.0, label='a', size=10) +
-#   annotate('text', x=2, y=2.0, label='a', size=10) +
-#   annotate('text', x=3, y=1.75, label='b', size=10) +
-#   facet_grid(rows=vars(as.factor(spp_count)), cols=vars(trt))
-# #export at 700x500
+#   xlab('Year') +
+#   ylab('Relative Yield in Field')
+
+ggplot(data=barGraphStats(data=subset(RYT, spp_count<16), variable="RYT", byFactorNames=c("legume_num", "spp_count", "trt")),
+       aes(x=as.factor(legume_num), y=mean)) +
+  geom_bar(stat='identity') +
+  geom_errorbar(aes(ymin=mean-1.96*se, ymax=mean+1.96*se), width=0.2) +
+  geom_hline(aes(yintercept=1), linetype="dashed") +
+  xlab('Legume Number') +
+  ylab('Relative Yield Total') +
+  annotate('text', x=1, y=2.0, label='a', size=10) +
+  annotate('text', x=2, y=2.0, label='a', size=10) +
+  annotate('text', x=3, y=1.75, label='b', size=10) +
+  facet_grid(rows=vars(as.factor(spp_count)), cols=vars(trt))
+#export at 700x500
+
+
+#### Plant Biomass under monoculture or polyculture with CO2 and N trts ####
+ggplot(barGraphStats(data=subset(anpp, spp_count<16 & species2 %in% c('Lespedeza capitata', 'Lupinus perennis', 'Amorpha canescens')), variable='anpp', byFactorNames=c('species2', 'CO2_trt', 'N_trt', 'spp_count')), aes(x=as.factor(spp_count), y=mean, fill=interaction(CO2_trt,N_trt))) +
+  geom_bar(stat='identity', position=position_dodge(0.9)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), position=position_dodge(0.9), width=0.2) +
+  facet_wrap(~species2)
+
+#### Relative Yield under monoculture or polyculture with CO2 and N trts ####
+ggplot(barGraphStats(data=subset(anppPoly, spp_count<16 & species2 %in% c('Lespedeza capitata', 'Lupinus perennis', 'Amorpha canescens')), variable='RY', byFactorNames=c('species2', 'CO2_trt', 'N_trt', 'legume_num')), aes(x=as.factor(legume_num), y=mean, fill=interaction(CO2_trt,N_trt))) +
+  geom_bar(stat='identity', position=position_dodge(0.9)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), position=position_dodge(0.9), width=0.2) +
+  facet_wrap(~species2)
